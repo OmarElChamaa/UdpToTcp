@@ -1,11 +1,11 @@
 #include <stdio.h>
-#include <stdlib.h>
+
 #include <fcntl.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include "packet.h"
-#include <time.h>
+
 
 #define DEFAULTSIZE 52
 
@@ -14,6 +14,9 @@ void raler(char *message){
 	exit(EXIT_FAILURE);
 } 
 
+int generateRandInt(int max){
+    srand
+} 
 
 int etablissementConnexion(int s,int ipDistante,int portLocal,int portEcoute){
     

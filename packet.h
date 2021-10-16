@@ -1,4 +1,12 @@
+#include <time.h>
+#include <stdlib.h>
 
+
+int generateRandInt(int max){
+    srand(time(NULL));
+    int r = rand(max);
+    return r;
+} 
 
 
 typedef struct packet
