@@ -4,7 +4,7 @@
 
 int generateRandInt(int max){
     srand(time(NULL));
-    int r = rand(max);
+    int r = rand() % max;
     return r;
 } 
 

@@ -1,5 +1,4 @@
 #include <stdio.h>
-
 #include <fcntl.h>
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -14,9 +13,7 @@ void raler(char *message){
 	exit(EXIT_FAILURE);
 } 
 
-int generateRandInt(int max){
-    srand
-} 
+
 
 int etablissementConnexion(int s,int ipDistante,int portLocal,int portEcoute){
     
