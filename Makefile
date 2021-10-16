@@ -1,14 +1,13 @@
+CC = gcc -g
+CFLAGS = -W -Wall -Wextra -Werror
+SOURCES = $(wildcard *.c)
+OBJETS = $(SOURCES:.c=.o)
+EXEC = main
+TEMPS = $(wildcard *.time)
 
-all: dirinfo
-	cc -Wall -Wextra -Werror -Wvla dirinfo.c -o dirinfo
-
-test: all FORCE
-	@bash test.sh 1
-	@bash test.sh 2
-	@bash test.sh 3
-	@bash test.sh 4
-
-FORCE: ;
-
+$(EXEC) : $(OBJETS)
+	$(CC) $(CFLAGS) -o $@ $^ 
+%.o : %.c
+	$(CC) $(CFLAGS) -c $<
 clean:
-	rm dirinfo
+	rm $(OBJETS) $(EXEC) $(TEMPS)
