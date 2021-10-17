@@ -102,7 +102,7 @@ const char * addZeroPrefix(int x){
 ///////////////////////////////FCT intToEightBit//////////////////////////////////////////
 const char  * intToEightBit(int x){
 
-    char * str=NULL;
+    char * str=malloc(sizeof(char *));
     sprintf(str,"%d",x);
     int numDigits = strlen(str);
 
