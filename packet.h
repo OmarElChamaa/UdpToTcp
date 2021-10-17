@@ -20,17 +20,27 @@
 typedef int SOCKET;
 
 
+
+typedef struct Type
+{
+    int ACK ; 
+    int RST ;
+    int FIN; 
+    int SYN; 
+  
+}Type;
+
+
 typedef struct packet
 {
     int id ; 
-    int type ; 
+    struct Type type ; 
     int seq ;
     int acq; 
     int ecn ;
     int fenetre ; 
     void * data ; 
 }packet;
-
 
 /////////////////////////FCT raler/////////////////////////////////////////////////////////
 void raler(char *message) 
@@ -140,6 +150,32 @@ const char * generatePacket(struct packet p){
 
 
 ///////////////////////////////////END OF FUNCTION//////////////////////////////////////////
+
+
+
+///////////////////////FCT GenerateStructFromPacket////////////////////////////////////////////////////////////
+
+
+struct packet * generatePacketFromBuf(char * buf){
+    char* temp=buf;
+    struct packet *p =malloc(sizeof(struct packet *));
+
+    p->id=convert_premiers_char(temp,8);
+    p->type.ACK=convert_premiers_char(temp,2);
+    p->type.RST=convert_premiers_char(temp,2);
+    p->type.FIN=convert_premiers_char(temp,2);
+    p->type.SYN=convert_premiers_char(temp,2);
+    p->seq=convert_premiers_char(temp,16);
+    p->acq=convert_premiers_char(temp,16);
+    p->ecn=convert_premiers_char(temp,8);
+    p->fenetre=convert_premiers_char(temp,8);
+    //p->data=NULL;
+
+
+//0000000116040201000000000000000100000000000000010000000500000001
+
+    return p;
+} 
 
 
 
