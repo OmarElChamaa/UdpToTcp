@@ -17,7 +17,7 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <string.h>
-
+#include <sys/select.h>
 
 #define DEFAULTSIZE 52
 
@@ -29,7 +29,7 @@ int etablissementConnexion(int s,int ipDistante,int portLocal,int portEcoute,str
     
     struct packet p ;
     p.id=a ;
-    p.type=0;
+    
     
     const char * packetToSend=generatePacket(p);
  
@@ -42,7 +42,7 @@ int etablissementConnexion(int s,int ipDistante,int portLocal,int portEcoute,str
         }
     }
 
-    fd_set fd_monitor;;
+    fd_set fd_monitor;
     struct timeval tv;
     int retval;
 

@@ -85,35 +85,55 @@ if ((sock=(bind(sock,(struct sockaddr *)&addr,sizeof(struct sockaddr_in)))==-1))
 ///////////////////////////////////END OF FUNCTION//////////////////////////////////////////
 
 
+/////////////////////FCT addPrefix////////////////////////////////////////////
+//pour ajouter un 0 avant le nombre x/////////////////
+const char * addZeroPrefix(int x){
+    char * str=NULL;
+    sprintf(str,"%d",x);
+    int numDigits = strlen(str);
+    char v1[]="0";
+
+    return strcat(v1,str);
+}
+//////////////////////////////////END OF FUNCTION//////////////////////////////////////////
 
 
 
-
-
-
-///////////////////////////////FCT intToFourChar//////////////////////////////////////////
-const char  * intToFourChar(int x){
+///////////////////////////////FCT intToEightBit//////////////////////////////////////////
+const char  * intToEightBit(int x){
 
     char * str=NULL;
     sprintf(str,"%d",x);
     int numDigits = strlen(str);
 
-    printf("str is %s and num digits is %d\n",str,numDigits);
+    //printf("str is %s and num digits is %d\n",str,numDigits);
 
-    char v1[]="0";
-    char v2[]="00";
-    char v3[]="000";
+    char v1[]="00000";
+    char v2[]="000000";
+    char v3[]="0000000";
+    char v4[]="0000";
+    char v5[]="000";
+    char v6[]="00";
+    char v7[]="0";
 
     switch (numDigits)
     {
         case 0:
-            return strcpy(str,"0000");
+            return strcpy(str,"00000000");
         case 1:
             return strcat(v3,str) ;
         case 2:
             return strcat(v2,str);
         case 3:
             return strcat(v1,str);
+        case 4:
+            return strcat(v4,str);
+        case 5:
+            return strcat(v5,str);
+        case 6:
+            return strcat(v6,str);
+        case 7:
+            return strcat(v7,str);
         default:
             printf("cas inconnu");
     }
@@ -127,21 +147,30 @@ const char  * intToFourChar(int x){
 
 //je dois encore concatener les donnees
 
+
 const char * generatePacket(struct packet p){
-    const char *id=intToFourChar(p.id);
-    const char *type=intToFourChar(p.type);
-    const char *seq=intToFourChar(p.seq);
-    const char *acq=intToFourChar(p.acq);
-    const char *ecn=intToFourChar(p.ecn);
-    const char *fen=intToFourChar(p.fenetre);
+    const char *id=intToEightBit(p.id);
+    const char *ack=addZeroPrefix(p.type.ACK);
+    const char *rst=addZeroPrefix(p.type.RST);
+    const char *fin=addZeroPrefix(p.type.FIN);
+    const char *syn=addZeroPrefix(p.type.SYN);
+    const char *seq=intToEightBit(p.seq);
+    const char *acq=intToEightBit(p.acq);
+    const char *ecn=intToEightBit(p.ecn);
+    const char *fen=intToEightBit(p.fenetre);
 
     char * packetHeader ;
     packetHeader=malloc(sizeof(id)*6);
 
     strcat(packetHeader,id);
-    strcat(packetHeader,type);
+    strcat(packetHeader,ack);
     strcat(packetHeader,seq);
+
     strcat(packetHeader,acq);
+    strcat(packetHeader,rst);
+    strcat(packetHeader,fin);
+    strcat(packetHeader,syn);
+
     strcat(packetHeader,ecn);
     strcat(packetHeader,fen);
 
