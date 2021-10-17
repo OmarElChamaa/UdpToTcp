@@ -1,8 +1,3 @@
-#include <stdio.h>
-#include <fcntl.h>
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
 #include "packet.h"
 
 
@@ -15,8 +10,22 @@ void raler(char *message){
 
 
 
-int etablissementConnexion(int s,int ipDistante,int portLocal,int portEcoute){
+int etablissementConnexion(int s,int ipDistante,int portLocal,int portEcoute,struct sockaddr_in ecoute,struct sockaddr_in envoie)
+{
+
+    int a = generateRandInt(5000);
+    char buff [4] = a +'0';
     
+    ssize_t n = sendto(s,buff,4,0,(struct sockaddr*)&portLocal,
+            sizeof(portLocal));
+    if(n==-1){
+        perror("sendto etabllissement \n");
+        if(close(s)==-1){
+            raler("close s");
+        }
+    }
+
+
 }
 
 void goBack(int ipDistante,int portLocal,int portEcoute){
@@ -40,6 +49,11 @@ void goBack(int ipDistante,int portLocal,int portEcoute){
     envoie.sin_family =AF_INET;
     envoie.sin_port = htons(portLocal);
     envoie.sin_addr.s_addr=INADDR_ANY;
+
+    if(bind(s,(const struct sockaddr *)&ecoute,
+    sizeof( struct sockaddr_in))==-1){
+        raler("Bind go back \n");
+    }
 
 
 }
@@ -73,7 +87,5 @@ int main(int argc, char * argv[]){
         printf("Vous avez choisi le mode go-back-in \n");
         goBack(ipDistInt,portLocalInt,portEcouteInt);
     }
-
-
     return 0 ;
 }

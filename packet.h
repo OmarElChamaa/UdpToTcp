@@ -9,6 +9,8 @@ int generateRandInt(int max){
 } 
 
 
+
+
 typedef struct packet
 {
     int id ; 
@@ -19,3 +21,9 @@ typedef struct packet
     int fenetre ; 
     void * data ; 
 };
+
+
+char * generatePacket(struct packet p){
+    char *packet = p.id+p.type+p.seq+p.acq+p.ecn+p.fenetre+p.data+'0'
+    return packet;
+}
