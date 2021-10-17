@@ -1,22 +1,26 @@
 #include <time.h>
+#include <unistd.h>
 #include <stdlib.h>
+#include <stdarg.h>
+#include <stdio.h>
+
+#include <sys/wait.h>
+#include <sys/stat.h>
+
+#include <fcntl.h>
+#include <dirent.h>
+
+#include <sys/types.h>
+#include <sys/socket.h>
+
+#include <errno.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+#include <string.h>
 typedef int SOCKET;
 
 
-<<<<<<< HEAD
-int generateRandInt(int max){
-    srand(time(NULL));
-    int r = rand() % max;
-    return r;
-} 
-
-
-
-
 typedef struct packet
-=======
- struct packet
->>>>>>> 3784b685b0b8ef4817a08dbb228acff52d2186a3
 {
     int id ; 
     int type ; 
@@ -25,28 +29,7 @@ typedef struct packet
     int ecn ;
     int fenetre ; 
     void * data ; 
-};
-
-
-<<<<<<< HEAD
-char * generatePacket(struct packet p){
-    char *packet = p.id+p.type+p.seq+p.acq+p.ecn+p.fenetre+p.data+'0'
-    return packet;
-}
-=======
-//////////////////////FCT creation d'une socket/////////////////////////////////////////////
-int creationSocket (int desc){
-    if ((desc=socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP))==-1){
-        raler("socket");
-    }
-return desc;
-}
-///////////////////////////////////END OF FUNCTION//////////////////////////////////////////
-
-
-
-
-
+}packet;
 
 
 /////////////////////////FCT raler/////////////////////////////////////////////////////////
@@ -59,7 +42,14 @@ void raler(char *message)
 
 
 
-
+//////////////////////FCT creation d'une socket/////////////////////////////////////////////
+int creationSocket (int desc){
+    if ((desc=socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP))==-1){
+        raler("socket");
+    }
+return desc;
+}
+///////////////////////////////////END OF FUNCTION//////////////////////////////////////////
 
 
 
@@ -90,10 +80,11 @@ if ((sock=(bind(sock,(struct sockaddr *)&addr,sizeof(struct sockaddr_in)))==-1))
 
 
 
+
 ///////////////////////////////FCT intToFourChar//////////////////////////////////////////
 const char  * intToFourChar(int x){
 
-    char str[4];
+    char * str=NULL;
     sprintf(str,"%d",x);
     int numDigits = strlen(str);
 
@@ -105,35 +96,50 @@ const char  * intToFourChar(int x){
 
     switch (numDigits)
     {
-    case 0:
-        strcpy(str,"0000");
-        printf("x is %s \n",str);
-        break;
-    case 1:
-        strcat(v3,str);
-        printf("x is %s \n",v3);
-        return v3 ;
-        break ; 
-    case 2:
-        strcat(v2,str);
-        printf("x is %s \n",v2);
-        return v2 ;
-        break ;
-    case 3:
-        strcat(v1,str);
-        printf("x is %s \n",v1);
-        return v1 ;
-        break ;
-    
-    default:
-        break;
+        case 0:
+            return strcpy(str,"0000");
+        case 1:
+            return strcat(v3,str) ;
+        case 2:
+            return strcat(v2,str);
+        case 3:
+            return strcat(v1,str);
+        default:
+            printf("cas inconnu");
     }
+    return NULL ;
     
-    return str ; 
 }
 ///////////////////////////////////END OF FUNCTION//////////////////////////////////////////
 
 
+///////////////////////FCT GeneratePacket////////////////////////////////////////////////////////////
+
+//je dois encore concatener les donnees
+
+const char * generatePacket(struct packet p){
+    const char *id=intToFourChar(p.id);
+    const char *type=intToFourChar(p.type);
+    const char *seq=intToFourChar(p.seq);
+    const char *acq=intToFourChar(p.acq);
+    const char *ecn=intToFourChar(p.ecn);
+    const char *fen=intToFourChar(p.fenetre);
+
+    char * packetHeader ;
+    packetHeader=malloc(sizeof(id)*6);
+
+    strcat(packetHeader,id);
+    strcat(packetHeader,type);
+    strcat(packetHeader,seq);
+    strcat(packetHeader,acq);
+    strcat(packetHeader,ecn);
+    strcat(packetHeader,fen);
+
+    return packetHeader;
+} 
+
+
+///////////////////////////////////END OF FUNCTION//////////////////////////////////////////
 
 
 
@@ -161,4 +167,3 @@ resultat= atoi(c);//partie entier de la partie extrait
 
 
 
->>>>>>> 3784b685b0b8ef4817a08dbb228acff52d2186a3
