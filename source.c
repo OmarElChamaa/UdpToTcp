@@ -22,55 +22,71 @@
 #define DEFAULTSIZE 52
 
 
-int etablissementConnexion(int s,int ipDistante,int portLocal,int portEcoute,struct sockaddr_in ecoute,struct sockaddr_in envoie)
+int etablissementConnexion(int s,int ipDistante,int portLocal,
+int portEcoute,struct sockaddr_in ecoute,struct sockaddr_in envoie)
 {
 
     int a = generateRandInt(5000);
-    
+    char buff [DEFAULTSIZE] ;
+
     struct packet p ;
     p.id=a ;
-    
-    
+
     const char * packetToSend=generatePacket(p);
- 
-    ssize_t n = sendto(s,packetToSend,8,0,(struct sockaddr*)&portLocal,
-            sizeof(portLocal));
-    if(n==-1){
-        perror("sendto etabllissement \n");
-        if(close(s)==-1){
-            raler("close s");
-        }
-    }
 
     fd_set fd_monitor;
     struct timeval tv;
     int retval;
 
     FD_ZERO(&fd_monitor);
-    FD_SET(0, &fd_monitor);
     FD_SET(s, &fd_monitor);
 
     tv.tv_sec = 5;
     tv.tv_usec = 0;
 
-    
+
     while(1){
-        retval = select(1, &fd_monitor, NULL, NULL, &tv);
-        if(retval==-1){
-            printf("select etablissement\n");
+        ssize_t n = sendto(s,packetToSend,8,0,(struct sockaddr * )&portLocal,
+        sizeof(portLocal));
+        if(n==-1){
+            raler("Premier sendto etablisssement \n");
         }
-        if(FD_ISSET(s,&fd_monitor)){
-                //revfrom
-                printf("data ready");
-        }else{
-            n = sendto(s,packetToSend,8,0,(struct sockaddr*)&portLocal,
-                sizeof(portLocal));
-            if(n==-1){
-                perror("sendto etabllissement \n");
-                if(close(s)==-1){
-                    raler("close s");
-                }
+
+        retval = select(1, &fd_monitor, NULL, NULL, &tv);
+            if(retval==-1){
+                printf("select etablissement\n");
             }
+
+        if(FD_ISSET(s,&fd_monitor)){
+                printf("data ready");//Je receve et je test et si tou va bien je renvois avec les nouvelles valeurs
+
+                //recevfrom
+                socklen_t size=sizeof(envoie);
+                int r =recvfrom(s,buff,DEFAULTSIZE+1,0,(struct sockaddr*)&envoie,&size);
+                if(r==-1){
+                    raler("recvfrom 1\n");
+                }
+                //deroulement de test
+                
+                int b=convert_premiers_char(buff,8);
+                int a1=convert_premiers_char(buff,8);
+                if(a1==a+1){
+                    a1=a1+1;
+                    p.id=a1;
+                    //!!!!! que mettre pour b 
+                    n = sendto(s,packetToSend,8,0,(struct sockaddr * )&portLocal,
+                    sizeof(portLocal));
+                    if(n==-1){
+                        raler("second sendto etablisssement \n");
+                    }
+                }
+
+                //send_to_establish
+
+                printf("connexion établie!");
+                exit(EXIT_SUCCESS);
+        }else{
+            continue;
         }
     }
 }

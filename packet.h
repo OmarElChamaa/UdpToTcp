@@ -98,6 +98,15 @@ const char * addZeroPrefix(int x){
 //////////////////////////////////END OF FUNCTION//////////////////////////////////////////
 
 
+////////////////////FCT intToChar////////////////////////////////////////////
+char intToChar(int x){
+    char str=x+'0';
+    return str;
+}
+//////////////////////////////////END OF FUNCTION//////////////////////////////////////////
+
+
+
 
 ///////////////////////////////FCT intToEightBit//////////////////////////////////////////
 const char  * intToEightBit(int x){
@@ -150,7 +159,7 @@ const char  * intToEightBit(int x){
 
 const char * generatePacket(struct packet p){
     const char *id=intToEightBit(p.id);
-    const char *ack=addZeroPrefix(p.type.ACK);
+    const char *ack=intToChar(p.type.ACK);
     const char *rst=addZeroPrefix(p.type.RST);
     const char *fin=addZeroPrefix(p.type.FIN);
     const char *syn=addZeroPrefix(p.type.SYN);
@@ -200,9 +209,6 @@ struct packet * generatePacketFromBuf(char * buf){
     p->fenetre=convert_premiers_char(temp,8);
     //p->data=NULL;
 
-
-//0000000116040201000000000000000100000000000000010000000500000001
-
     return p;
 } 
 
@@ -213,19 +219,19 @@ struct packet * generatePacketFromBuf(char * buf){
 //et renvoi le numéro 
 //ex pour la cheine "4584200" il renvoie 4584
 int convert_premiers_char (char * string,int size){
-int i=0, resultat=0;
-char * c= malloc(sizeof(char *));
+    int i=0, resultat=0;
+    char * c= malloc(sizeof(char *));
 
-while(string[i] != '\0'){
-    c=strncpy(c, string, size);//extraire les 4 premier bits	
-    i++;
-}
+    while(string[i] != '\0'){
+        c=strncpy(c, string, size);//extraire les 4 premier bits	
+        i++;
+    }
 
-for(i = 0 ; string[i] ; i++)//supprimer la partie extrait
-    string[i] = string[i+size];
+    for(i = 0 ; string[i] ; i++)//supprimer la partie extrait
+        string[i] = string[i+size];
 
-resultat= atoi(c);//partie entier de la partie extrait
-  return resultat;
+    resultat= atoi(c);//partie entier de la partie extrait
+    return resultat;
 }
 ///////////////////////////////////END OF FUNCTION//////////////////////////////////////////
 
