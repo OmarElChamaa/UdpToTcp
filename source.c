@@ -79,6 +79,7 @@ int portEcoute,struct sockaddr_in ecoute,struct sockaddr_in envoie)
                 }
                 else{
                     printf("mauvais comportement du serveur en 3 way-shakehand\n");
+                    exit(EXIT_FAILURE);
                 }
 
 
