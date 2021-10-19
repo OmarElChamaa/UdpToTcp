@@ -20,7 +20,7 @@
 #include <sys/select.h>
 
 #define DEFAULTSIZE 52
-
+int id =0;
 
 int etablissementConnexion(int s,int ipDistante,int portLocal,
 int portEcoute,struct sockaddr_in ecoute,struct sockaddr_in envoie)
@@ -29,10 +29,13 @@ int portEcoute,struct sockaddr_in ecoute,struct sockaddr_in envoie)
     int a = generateRandInt(5000);
     char buff [DEFAULTSIZE] ;
 
-    struct packet p ;
-    p.id=a ;
+    struct packet* p=init_packet() ;
+    
+    p->id=id++ ;
+    p->type.SYN=1;
+    p->seq=a;
 
-    const char * packetToSend=generatePacket(p);
+    const char * packetToSend=generatePacket(*p);
 
     fd_set fd_monitor;
     struct timeval tv;
@@ -46,11 +49,8 @@ int portEcoute,struct sockaddr_in ecoute,struct sockaddr_in envoie)
 
 
     while(1){
-        ssize_t n = sendto(s,packetToSend,8,0,(struct sockaddr * )&portLocal,
-        sizeof(portLocal));
-        if(n==-1){
-            raler("Premier sendto etablisssement \n");
-        }
+        send_to_establish(s,packetToSend,DEFAULTSIZE,0,(struct sockaddr*)&envoie,
+        sizeof(portEcoute));
 
         retval = select(1, &fd_monitor, NULL, NULL, &tv);
             if(retval==-1){
@@ -58,30 +58,29 @@ int portEcoute,struct sockaddr_in ecoute,struct sockaddr_in envoie)
             }
 
         if(FD_ISSET(s,&fd_monitor)){
-                printf("data ready");//Je receve et je test et si tou va bien je renvois avec les nouvelles valeurs
+                printf("data ready");//Je receve et je test et si tout va bien je renvois avec les nouvelles valeurs
 
                 //recevfrom
                 socklen_t size=sizeof(envoie);
-                int r =recvfrom(s,buff,DEFAULTSIZE+1,0,(struct sockaddr*)&envoie,&size);
+                int r =recvfrom(s,buff,DEFAULTSIZE+1,0,(struct sockaddr*)&ecoute,&size);
                 if(r==-1){
                     raler("recvfrom 1\n");
                 }
                 //deroulement de test
                 
-                int b=convert_premiers_char(buff,8);
-                int a1=convert_premiers_char(buff,8);
-                if(a1==a+1){
-                    a1=a1+1;
-                    p.id=a1;
-                    //!!!!! que mettre pour b 
-                    n = sendto(s,packetToSend,8,0,(struct sockaddr * )&portLocal,
-                    sizeof(portLocal));
-                    if(n==-1){
-                        raler("second sendto etablisssement \n");
-                    }
+                p=generatePacketFromBuf(buff);//on genere le paquet du buf recu
+                if(p->type.ACK==a+1){
+                    p->acq=p->seq+1;//ack = b+1
+                    p->id++;//id++
+                    //envoyer le dernier paquet en confirmant avoir recu l'ack
+                    send_to_establish(s,packetToSend,DEFAULTSIZE,0,(struct sockaddr * )&envoie,
+                    sizeof(portEcoute));
+                   
+                }
+                else{
+                    printf("mauvais comportement du serveur en 3 way-shakehand\n");
                 }
 
-                //send_to_establish
 
                 printf("connexion établie!");
                 exit(EXIT_SUCCESS);
@@ -90,7 +89,7 @@ int portEcoute,struct sockaddr_in ecoute,struct sockaddr_in envoie)
         }
     }
 }
-
+/*
 void goBack(int ipDistante,int portLocal,int portEcoute){
 
     //int fenetre = ;
@@ -118,6 +117,7 @@ void stopNwait(int ipDistante,int portLocal,int portEcoute){
 
 }
 
+
 int main(int argc, char * argv[]){
 
     if(argc!=5){
@@ -144,4 +144,8 @@ int main(int argc, char * argv[]){
         goBack(ipDistInt,portLocalInt,portEcouteInt);
     }
     return 0 ;
+}
+*/
+int main(){
+    return 0;
 }

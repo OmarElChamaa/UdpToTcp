@@ -42,6 +42,24 @@ typedef struct packet
     void * data ; 
 }packet;
 
+
+/////////////////////FCT addPrefix////////////////////////////////////////////
+//pour ajouter un 0 avant le nombre x/////////////////
+struct packet * init_packet(){
+struct packet * p=malloc(sizeof(struct packet *));
+p->acq=0;
+p->ecn=0;
+p->fenetre=0;
+p->id=0;
+p->seq=0;
+p->type.ACK=0;
+p->type.FIN=0;
+p->type.RST=0;
+p->type.SYN=0;
+return p;
+}
+//////////////////////////////////END OF FUNCTION//////////////////////////////////////////
+
 /////////////////////////FCT raler/////////////////////////////////////////////////////////
 void raler(char *message) 
 {
@@ -90,7 +108,7 @@ if ((sock=(bind(sock,(struct sockaddr *)&addr,sizeof(struct sockaddr_in)))==-1))
 const char * addZeroPrefix(int x){
     char * str=NULL;
     sprintf(str,"%d",x);
-    int numDigits = strlen(str);
+    //int numDigits = strlen(str);
     char v1[]="0";
 
     return strcat(v1,str);
@@ -159,7 +177,7 @@ const char  * intToEightBit(int x){
 
 const char * generatePacket(struct packet p){
     const char *id=intToEightBit(p.id);
-    const char *ack=intToChar(p.type.ACK);
+     char ack=intToChar(p.type.ACK);
     const char *rst=addZeroPrefix(p.type.RST);
     const char *fin=addZeroPrefix(p.type.FIN);
     const char *syn=addZeroPrefix(p.type.SYN);
@@ -172,7 +190,7 @@ const char * generatePacket(struct packet p){
     packetHeader=malloc(sizeof(id)*6);
 
     strcat(packetHeader,id);
-    strcat(packetHeader,ack);
+    strcat(packetHeader,&ack);
     strcat(packetHeader,seq);
 
     strcat(packetHeader,acq);
@@ -189,28 +207,6 @@ const char * generatePacket(struct packet p){
 
 ///////////////////////////////////END OF FUNCTION//////////////////////////////////////////
 
-
-
-///////////////////////FCT GenerateStructFromPacket////////////////////////////////////////////////////////////
-
-
-struct packet * generatePacketFromBuf(char * buf){
-    char* temp=buf;
-    struct packet *p =malloc(sizeof(struct packet *));
-
-    p->id=convert_premiers_char(temp,8);
-    p->type.ACK=convert_premiers_char(temp,2);
-    p->type.RST=convert_premiers_char(temp,2);
-    p->type.FIN=convert_premiers_char(temp,2);
-    p->type.SYN=convert_premiers_char(temp,2);
-    p->seq=convert_premiers_char(temp,16);
-    p->acq=convert_premiers_char(temp,16);
-    p->ecn=convert_premiers_char(temp,8);
-    p->fenetre=convert_premiers_char(temp,8);
-    //p->data=NULL;
-
-    return p;
-} 
 
 
 
@@ -234,6 +230,53 @@ int convert_premiers_char (char * string,int size){
     return resultat;
 }
 ///////////////////////////////////END OF FUNCTION//////////////////////////////////////////
+
+
+
+
+
+
+///////////////////////FCT GenerateStructFromPacket////////////////////////////////////////////////////////////
+
+
+struct packet * generatePacketFromBuf(char * buf){
+    char* temp=buf;
+    struct packet *p =malloc(sizeof(struct packet *));
+
+    p->id=convert_premiers_char(temp,8);
+    p->type.ACK=convert_premiers_char(temp,2);
+    p->type.RST=convert_premiers_char(temp,2);
+    p->type.FIN=convert_premiers_char(temp,2);
+    p->type.SYN=convert_premiers_char(temp,2);
+    p->seq=convert_premiers_char(temp,16);
+    p->acq=convert_premiers_char(temp,16);
+    p->ecn=convert_premiers_char(temp,8);
+    p->fenetre=convert_premiers_char(temp,8);
+    //p->data=NULL;
+
+    return p;
+} 
+///////////////////////////////////END OF FUNCTION//////////////////////////////////////////
+
+
+
+
+
+/////////////////////////////////FCT send_to_establish/////////////////////////////////
+void send_to_establish (int fd, const void *buf, size_t size, int flags,
+ const struct sockaddr *addr, socklen_t addr_len){
+ssize_t n = sendto(fd,buf,size,0,(struct sockaddr*)&addr,
+        sizeof(addr));
+            if(n==-1){
+                perror("sendto etabllissement \n");
+            if(close(fd)==-1){
+                raler("close s");
+            }
+            }
+return ;
+}
+///////////////////////////////////END OF FUNCTION//////////////////////////////////////////
+
 
 
 
