@@ -21,22 +21,40 @@
 
 int etablissementConnexion (int s,int ipDistante,int portLocal,int portEcoute,struct sockaddr_in client,socklen_t size,char *buf){
     int retour=0;
-    struct packet * p = malloc(sizeof (struct packet*));
-    
-    int alea_b = generateRandInt(500);
-    if((retour=recvfrom(s,buf,1024,0,(struct sockaddr*)&client,&size))==-1){
+    struct packet * p = init_packet();
+    SOCKET sock = creationSocket(sock);//creation de socket
+    struct sockaddr_in me = prepaAddrLoc();//preparation de l'adresse et le port
+    binding(sock,me);//lier le port
+    int alea_b = generateRandInt(500);//nb aléatoire
+    char buf[52];
+    memset(buf, '\0',52);
+//on peut ajouter une section de test temporaire pour tester si nos adresse et port sont justes
+    while(1){
+    if((retour=recvfrom(s,buf,52,0,(struct sockaddr*)&client,&size))==-1){
         raler("recvfrom");
     }
 
-
     char*inter_buf = buf;
-    
-    p->id==convert_premiers_char(inter_buf,4);
-    p->type= convert_premiers_char(inter_buf,4);
-    p->seq= convert_premiers_char(inter_buf,8);
+    //analyse de données reçu :
+
+
+    //preparation de donnée (ACK à envoyer)
+
+
+    //envoie d'ACK
+
+
+    //Attendre la confirmation de reçu de l'ACK de la part de source 
+
+
+    //Connexion établie
+    printf("connexion établie\n");
+
+
+    }
+
 
 }
-
 
 
 
