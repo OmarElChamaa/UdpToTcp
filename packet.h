@@ -58,6 +58,7 @@ p->type.ACK=0;
 p->type.FIN=0;
 p->type.RST=0;
 p->type.SYN=0;
+//il faut free(p) apres l'appelle a cette fct
 return p;
 }
 //////////////////////////////////END OF FUNCTION//////////////////////////////////////////
@@ -311,16 +312,31 @@ struct packet * generatePacketFromBuf(char * buf){
     struct packet *p =malloc(sizeof(struct packet *));
 
     p->id=convert_premiers_char(temp,8);
-    p->type.ACK=convert_premiers_char(temp,2);
-    p->type.RST=convert_premiers_char(temp,2);
-    p->type.FIN=convert_premiers_char(temp,2);
-    p->type.SYN=convert_premiers_char(temp,2);
+    int tmp=convert_premiers_char(temp,8);
+    //tester la presence de ACK
+    if(tmp-16>=0){
+        p->type.ACK=16;
+        tmp-=16;
+    }
+    //tester la presence de RST
+    if(tmp-4>=0){
+        p->type.RST=4;
+        tmp-=4;
+    }
+    if(tmp-2>=0){
+        p->type.FIN=2;
+        tmp-=2;
+    }
+    if(tmp-1>=0){
+    p->type.SYN=1;
+    tmp-=1;
+    }
     p->seq=convert_premiers_char(temp,16);
     p->acq=convert_premiers_char(temp,16);
     p->ecn=convert_premiers_char(temp,8);
     p->fenetre=convert_premiers_char(temp,8);
     //p->data=NULL;
-
+//Il faut faire un free(p) apres l'appelle a cette fct
     return p;
 } 
 ///////////////////////////////////END OF FUNCTION//////////////////////////////////////////
