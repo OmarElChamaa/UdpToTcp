@@ -84,7 +84,6 @@ return resultat;
 ///////////////////////////////////END OF FUNCTION//////////////////////////////////////////
 
 
-
 //////////////////////FCT binaire en decimal/////////////////////////////////////////////
 int bin_to_dec ( char * bin ){//convertir un nombre binaire en décimal
 int i,size;
@@ -101,6 +100,26 @@ return 0;
 }
 ///////////////////////////////////END OF FUNCTION//////////////////////////////////////////
 
+
+
+//////////////////////FCT concertire un nb decimal en binaire////////////////////////////////
+void dec_to_bin(int dec, char * buf){
+
+  int tab[16], i; 
+  char c;   
+  for(i=0; dec > 0; i++)  
+  {  
+        tab[i] = dec%2;  
+        dec = dec/2;  
+  }   
+  for(i=i-1; i >= 0; i--)  
+  {  
+    c= tab[i] + '0';
+    strcat(buf,&c);
+  } 
+return;
+}
+///////////////////////////////////END OF FUNCTION//////////////////////////////////////////
 
 
 
