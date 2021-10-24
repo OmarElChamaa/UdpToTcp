@@ -96,7 +96,7 @@ for(i=size-1;i>=0;i--){
     resultat=resultat + puissance(2,puiss);
     }
 }
-return 0;
+return resultat;
 }
 ///////////////////////////////////END OF FUNCTION//////////////////////////////////////////
 
@@ -278,9 +278,9 @@ const char * generatePacket(struct packet p){
 
 
 /////////////////////////////////FCT convert_premiers_char/////////////////////////////////
-//Fonction qui sert à recuperer les 4 premier octets d'un string de entiers
+//Fonction qui sert à recuperer les n premier octets d'un string de entiers
 //et renvoi le numéro 
-//ex pour la cheine "4584200" il renvoie 4584
+//ex pour la cheine "1111 1111" et n =4 il renvoie 15
 int convert_premiers_char (char * string,int size){
     int i=0, resultat=0;
     char * c= malloc(sizeof(char *));
@@ -293,7 +293,7 @@ int convert_premiers_char (char * string,int size){
     for(i = 0 ; string[i] ; i++)//supprimer la partie extrait
         string[i] = string[i+size];
 
-    resultat= atoi(c);//partie entier de la partie extrait
+    resultat= bin_to_dec(c);//partie entier de la partie extrait
     return resultat;
 }
 ///////////////////////////////////END OF FUNCTION//////////////////////////////////////////
