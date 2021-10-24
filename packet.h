@@ -73,6 +73,37 @@ void raler(char *message)
 
 
 
+//////////////////////FCT calculer la puissance/////////////////////////////////////////////
+int puissance ( int a, int b ){//calculer a^b
+int resultat =1;
+    for(int i=0;i<b;i++){
+        resultat*=a;
+    }
+return resultat;
+}
+///////////////////////////////////END OF FUNCTION//////////////////////////////////////////
+
+
+
+//////////////////////FCT binaire en decimal/////////////////////////////////////////////
+int bin_to_dec ( char * bin ){//convertir un nombre binaire en décimal
+int i,size;
+size=strlen(bin);
+int resultat=0;
+int puiss=0;
+for(i=size-1;i>=0;i--){
+    if(bin[i]=='1'){
+        puiss=size-i-1;
+    resultat=resultat + puissance(2,puiss);
+    }
+}
+return 0;
+}
+///////////////////////////////////END OF FUNCTION//////////////////////////////////////////
+
+
+
+
 //////////////////////FCT creation d'une socket/////////////////////////////////////////////
 int creationSocket (int desc){
     if ((desc=socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP))==-1){
