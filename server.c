@@ -26,11 +26,13 @@ int etablissementConnexion (int s,int ipDistante,int portLocal,int portEcoute,st
     struct sockaddr_in me = prepaAddrLoc();//preparation de l'adresse et le port
     binding(sock,me);//lier le port
     int alea_b = generateRandInt(500);//nb aléatoire
-    char buf[52];
-    memset(buf, '\0',52);
+
+    char buf[DEFAULTSIZE];
+    memset(buf, '\0',DEFAULTSIZE);
+    
 //on peut ajouter une section de test temporaire pour tester si nos adresse et port sont justes
     while(1){
-    if((retour=recvfrom(s,buf,52,0,(struct sockaddr*)&client,&size))==-1){
+    if((retour=recvfrom(s,buf,DEFAULTSIZE,0,(struct sockaddr*)&client,&size))==-1){
         raler("recvfrom");
     }
 

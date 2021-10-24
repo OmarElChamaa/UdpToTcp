@@ -18,6 +18,7 @@
 #include <arpa/inet.h>
 #include <string.h>
 typedef int SOCKET;
+#define DEFAULTSIZE 416
 
 
 
