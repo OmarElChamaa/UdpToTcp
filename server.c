@@ -59,24 +59,45 @@ int etablissementConnexion (int s,int ipDistante,int portLocal,int portEcoute,st
 
     char*inter_buf = buf;
     //analyse de données reçu :
-    
-
+    p=generatePacketFromBuf(inter_buf);
     //preparation de donnée (ACK à envoyer)
 
-
+    p->type.ACK=p->type.SYN+1;
+    p->type.SYN=alea_b;
+    p->id ++;
+    char*inter2_buf = generatePacket(*p);
     //envoie d'ACK
+    socklen_t socklen = sizeof(struct sockaddr_in);
+    send_to_establish(sock,inter2_buf, DEFAULTSIZE,0,(struct sockaddr*)&client, socklen);
 
     
     //Attendre la confirmation de reçu de l'ACK de la part de source 
+    char inter3_buf[DEFAULTSIZE];
+    memset(inter3_buf, '\0',DEFAULTSIZE);
+
+    int r =recvfrom(s,inter3_buf,DEFAULTSIZE+1,0,(struct sockaddr*)&client,&size);
+    if(r==-1){
+        raler("recvfrom 1\n");
+    }
+    p=generatePacketFromBuf(inter3_buf);
+    if(p->acq==p->seq+1){
+        printf("connexion établie :)\n");
+        return 1;
+    }
+    else{
+        return-1;
+    }
 
     }
-    //Connexion établie
-    printf("connexion établie\n");
 
+    else {//rien sur le socket?
+            printf("rien reçu .. \nDeuxième tentative en cours\nMerci de patienter\n");
+            continue;
 
-    }
+        }
+}
 
-
+return -1;
 }
 
 

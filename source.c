@@ -19,7 +19,6 @@
 #include <string.h>
 #include <sys/select.h>
 
-#define DEFAULTSIZE 52
 int id =0;
 
 int etablissementConnexion(int s,int ipDistante,int portLocal,
