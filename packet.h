@@ -105,10 +105,10 @@ return resultat;
 
 
 //////////////////////FCT concertire un nb decimal en binaire////////////////////////////////
-void dec_to_bin(int dec, char * buf){
+void dec_to_bin(int dec, char buf[DEFAULTSIZE]){
 
-  int tab[16], i; 
-  char c;   
+  int tab[DEFAULTSIZE], i; 
+  char *c= malloc(sizeof(char));   
   for(i=0; dec > 0; i++)  
   {  
         tab[i] = dec%2;  
@@ -116,12 +116,13 @@ void dec_to_bin(int dec, char * buf){
   }   
   for(i=i-1; i >= 0; i--)  
   {  
-    c= tab[i] + '0';
-    strcat(buf,&c);
+    sprintf(c,"%d",tab[i]);
+    strcat(buf,c);
   } 
 return;
 }
 ///////////////////////////////////END OF FUNCTION//////////////////////////////////////////
+
 
 
 
