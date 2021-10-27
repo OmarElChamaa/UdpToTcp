@@ -143,7 +143,6 @@ int dec_to_Intbin(int dec){
         sprintf(str,"%d",tab[i]);
         strcat(buf,str);
     } 
-    printf("buf is %s  et strlen est %ld \n",buf,strlen(buf));
 
     int x = atoi(buf);
 
@@ -305,26 +304,45 @@ char  * ajoutNZero(int x,int nbZero){
 const char * generatePacket(struct packet p){
 
     const char *id = intToEightBit(dec_to_Intbin(p.id));
-
+    
+    printf("ID IS %s \n ",id);
     int x = p.type.ACK+p.type.RST+p.type.FIN+p.type.SYN ; 
 
     const char *type = intToEightBit(dec_to_Intbin(x));
+    printf("type is %s \n ",type);
 
-    char *seq = ajoutNZero(p.seq,16);
-    char *acq = ajoutNZero(p.acq,16);
-    const char *ecn = intToEightBit(p.ecn);
-    const char *fen = intToEightBit(p.fenetre);
+    char *seq = ajoutNZero(dec_to_Intbin(p.seq),16);
+
+    printf("seq is %s \n ",seq);
+
+
+    char *acq = ajoutNZero(dec_to_Intbin(p.acq),16);
+
+    printf("acq is %s \n ",acq);
+    const char *ecn = intToEightBit(dec_to_Intbin(p.ecn));
+
+    printf("ecn is %s \n ",ecn);
+    const char *fen = intToEightBit(dec_to_Intbin(p.fenetre));
+    printf("fen is %s \n ",fen);
 
     char * packetHeader=malloc(sizeof(char)*416);
+    memset(packetHeader,'\0',8*8);
     
 
     strcat(packetHeader,id);
+    printf("PACKET HEADER IS   : %s \n ID IS %s \n",packetHeader,id);
     strcat(packetHeader,type);
+    printf("PACKET HEADER IS   : %s \n",packetHeader);
     strcat(packetHeader,seq);
+    printf("PACKET HEADER IS   : %s \n",packetHeader);
     strcat(packetHeader,acq);
+    printf("PACKET HEADER IS   : %s \n",packetHeader);
     strcat(packetHeader,ecn);
+    printf("PACKET HEADER IS   : %s \n",packetHeader);
     strcat(packetHeader,fen);
+    printf("PACKET HEADER IS   : %s \n",packetHeader);
 
+    
     return packetHeader;
 } 
 
