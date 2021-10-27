@@ -21,7 +21,7 @@
 
 int etablissementConnexion (int s,int ipDistante,int portLocal,int portEcoute,struct sockaddr_in client,socklen_t size,char *buf){
     int retour=0;
-    struct packet * p = init_packet();
+    struct packet p = init_packet();
     SOCKET sock = creationSocket(sock);//creation de socket
     struct sockaddr_in me = prepaAddrLoc();//preparation de l'adresse et le port
     binding(sock,me);//lier le port
@@ -62,10 +62,10 @@ int etablissementConnexion (int s,int ipDistante,int portLocal,int portEcoute,st
     p=generatePacketFromBuf(inter_buf);
     //preparation de donnée (ACK à envoyer)
 
-    p->type.ACK=p->type.SYN+1;
-    p->type.SYN=alea_b;
-    p->id ++;
-    char*inter2_buf = generatePacket(*p);
+    p.type.ACK=p.type.SYN+1;
+    p.type.SYN=alea_b;
+    p.id ++;
+    char*inter2_buf = generatePacket(p);
     //envoie d'ACK
     socklen_t socklen = sizeof(struct sockaddr_in);
     send_to_establish(sock,inter2_buf, DEFAULTSIZE,0,(struct sockaddr*)&client, socklen);
@@ -80,7 +80,7 @@ int etablissementConnexion (int s,int ipDistante,int portLocal,int portEcoute,st
         raler("recvfrom 1\n");
     }
     p=generatePacketFromBuf(inter3_buf);
-    if(p->acq==p->seq+1){
+    if(p.acq==p.seq+1){
         printf("connexion établie :)\n");
         return 1;
     }

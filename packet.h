@@ -301,9 +301,9 @@ char  * ajoutNZero(int x,int nbZero){
 //je dois encore concatener les donnees
 
 
-const char * generatePacket(struct packet p){
+void generatePacket(struct packet p,char * packetHeader2){
 
-    const char *id = intToEightBit(dec_to_Intbin(p.id));
+    const char *id = ajoutNZero( dec_to_Intbin(p.id),8);
     
     printf("ID IS %s \n ",id);
     int x = p.type.ACK+p.type.RST+p.type.FIN+p.type.SYN ; 
@@ -325,25 +325,26 @@ const char * generatePacket(struct packet p){
     const char *fen = intToEightBit(dec_to_Intbin(p.fenetre));
     printf("fen is %s \n ",fen);
 
-    char * packetHeader=malloc(sizeof(char)*416);
-    memset(packetHeader,'\0',8*8);
-    
+    //char * packetHeader2=malloc(sizeof(char)*416);
+    //memset(packetHeader2,'\0',DEFAULTSIZE);
+    //char packetHeader2[416];
 
-    strcat(packetHeader,id);
-    printf("PACKET HEADER IS   : %s \n ID IS %s \n",packetHeader,id);
-    strcat(packetHeader,type);
-    printf("PACKET HEADER IS   : %s \n",packetHeader);
-    strcat(packetHeader,seq);
-    printf("PACKET HEADER IS   : %s \n",packetHeader);
-    strcat(packetHeader,acq);
-    printf("PACKET HEADER IS   : %s \n",packetHeader);
-    strcat(packetHeader,ecn);
-    printf("PACKET HEADER IS   : %s \n",packetHeader);
-    strcat(packetHeader,fen);
-    printf("PACKET HEADER IS   : %s \n",packetHeader);
+
+    strcat(packetHeader2,id);
+    printf("PACKET HEADER IS   : %s , taille : %ld \n ID IS %s \n",packetHeader2,strlen(id),id);
+    strcat(packetHeader2,type);
+    printf("PACKET HEADER IS   : %s \n",packetHeader2);
+    strcat(packetHeader2,seq);
+    printf("PACKET HEADER IS   : %s \n",packetHeader2);
+    strcat(packetHeader2,acq);
+    printf("PACKET HEADER IS   : %s \n",packetHeader2);
+    strcat(packetHeader2,ecn);
+    printf("PACKET HEADER IS   : %s \n",packetHeader2);
+    strcat(packetHeader2,fen);
+    printf("PACKET HEADER IS   : %s \n",packetHeader2);
 
     
-    return packetHeader;
+    return ;
 } 
 
 ///////////////////////////////////END OF FUNCTION//////////////////////////////////////////

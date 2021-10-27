@@ -155,20 +155,18 @@
 
 int main(){
     char buf[416] = "0000111100000001000000010000000100000001000000010000000100000001";
-    packet * p = init_packet(*p);
+    packet p = init_packet(p);
     p=generatePacketFromBuf(buf);
 
-    printf("ID : %d\n",p->id);
-    printf("Type ACK : %d\n",p->type.ACK);
-    printf("Type FIN : %d\n",p->type.FIN);
-    printf("Type RST : %d\n",p->type.RST);
-    printf("Type SYN : %d\n",p->type.SYN);
-    printf("acq : %d\n",p->acq);
-    printf("ECN : %d\n",p->ecn);
-    printf("Fenetre : %d\n",p->fenetre);
-    printf("seq : %d\n",p->seq);
+    printf("ID : %d\n",p.id);
+    printf("Type ACK : %d\n",p.type.ACK);
+    printf("Type FIN : %d\n",p.type.FIN);
+    printf("Type RST : %d\n",p.type.RST);
+    printf("Type SYN : %d\n",p.type.SYN);
+    printf("acq : %d\n",p.acq);
+    printf("ECN : %d\n",p.ecn);
+    printf("Fenetre : %d\n",p.fenetre);
+    printf("seq : %d\n",p.seq);
     
-
-    free(p);
     return 0;
 }
