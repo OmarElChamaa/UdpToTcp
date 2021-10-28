@@ -22,8 +22,7 @@
 int id =0;
 
 int etablissementConnexion(int s,struct sockaddr_in ecoute,
-struct sockaddr_in envoie)
-{
+struct sockaddr_in envoie){
 
     int a = generateRandInt(5000);
     char buff [DEFAULTSIZE] ;
@@ -83,9 +82,8 @@ struct sockaddr_in envoie)
                     printf("mauvais comportement du serveur en 3 way-shakehand\n");
                     exit(EXIT_FAILURE);
                 }
-
-
                 printf("connexion établie!");
+                id=0;
                 exit(EXIT_SUCCESS);
         }else{
             continue;
@@ -93,16 +91,73 @@ struct sockaddr_in envoie)
     }
 }
 
-void goBack(int s,struct sockaddr_in envoie,struct sockaddr_in ecoute){
+// void goBack(int s,struct sockaddr_in envoie,struct sockaddr_in ecoute){
 
-    //int fenetre = ;
+   
 
-    binding(s,ecoute);
+// }
 
+void stopNwait(int s,struct sockaddr_in envoie,
+struct sockaddr_in ecoute,struct packet p){
+    
+    //binding(s,ecoute);
 
-}
+    fd_set fd_monitor;
+    struct timeval tv;
+    int retval;
 
-void stopNwait(int s,struct sockaddr_in envoie,struct sockaddr_in ecoute){
+    FD_ZERO(&fd_monitor);
+    FD_SET(s, &fd_monitor);
+
+    tv.tv_sec = 5;
+    tv.tv_usec = 0;
+
+    char * packetToSend = malloc(sizeof(char)*DEFAULTSIZE) ;
+    memset(packetToSend,'\0',DEFAULTSIZE);
+    generatePacket(p,packetToSend) ;
+    
+
+    char * buffpacketToRecv = malloc(sizeof(char)*DEFAULTSIZE) ;
+    memset(buffpacketToRecv,'\0',DEFAULTSIZE);
+
+    int altern = 0 ; 
+    
+    struct packet tmp = p ;
+
+    while(1){
+        retval=select(FD_SETSIZE+1,&fd_monitor,NULL,NULL,&tv);
+        switch (retval)
+        {
+        case -1 :
+            close(s);
+            raler("select GO BACK \n");
+            break;
+        
+        default:
+            int x=0;
+            x = sendto(s,packetToSend,DEFAULTSIZE+1,0,(struct sockaddr*)&envoie,
+            sizeof(envoie));    
+            if(x==-1){
+                close(s);
+                raler("Sendto");
+            }
+            if(FD_ISSET(s,&fd_monitor)){
+
+                recvfrom(s,buffpacketToRecv,DEFAULTSIZE,0,(struct sockaddr*)&ecoute,
+                sizeof(ecoute));
+                if(x==-1){
+                    close(s);
+                    printf("recv from \n");
+                }
+                p=generatePacketFromBuf(buffpacketToRecv);
+                if(p.acq!=tmp.seq){
+                    break;
+                }
+                
+            }
+            
+        }
+    }
 
 }
 
@@ -146,12 +201,12 @@ int main(int argc, char * argv[]){
         return EXIT_FAILURE;
     }
 
-
+    struct packet p=init_packet();
 
     if(modeInt==1){
 
         printf("Vous avez choisi le mode stop-wait \n");
-        stopNwait(s,envoie,ecoute);  
+        stopNwait(s,envoie,ecoute,p);  
       
     }else{
 
