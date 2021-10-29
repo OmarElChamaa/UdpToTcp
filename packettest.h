@@ -13,6 +13,7 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 
+
 #include <errno.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
@@ -416,8 +417,7 @@ struct packet  generatePacketFromBuf(char * buf){
 
 
 /////////////////////////////////FCT send_to_establish/////////////////////////////////
-void send_to_establish (int fd, const void *buf, size_t size, int flags,
- const struct sockaddr *addr, socklen_t addr_len){
+void send_to_establish (int fd, const void *buf, size_t size, int flags,const struct sockaddr *addr, socklen_t addr_len){
 ssize_t n = sendto(fd,buf,size,flags,(struct sockaddr*)&addr,
        addr_len);
             if(n==-1){
@@ -453,11 +453,11 @@ struct sockaddr_in envoie){
     FD_SET(s, &fd_monitor);
     socklen_t size=sizeof(ecoute);
 
-    tv.tv_sec = 30;
-    tv.tv_usec = 0;
+   
 
     while(1){
-
+    tv.tv_sec = 5;
+    tv.tv_usec = 0;
         retval = select(1, &fd_monitor, NULL, NULL, &tv);
         if(retval==-1){
             close(s);
@@ -497,7 +497,7 @@ struct sockaddr_in envoie){
             }
         }
         else {//rien sur le socket?
-            printf("rien reçu .. \nDeuxième tentative en cours\nMerci de patienter\n");
+            printf("Rien reçu .. \nNouvelle tentative en cours\nMerci de patienter\n\n\n");
             continue;
         }
     }
@@ -509,8 +509,7 @@ struct sockaddr_in envoie){
 //////////////////////////////FCT ETABLISSEMENT DE CONNEXION COTÉ SOURCE /////////////////
 
 
-int etablissementConnexionSource(int s,struct sockaddr_in ecoute,
-struct sockaddr_in envoie){
+int etablissementConnexionSource(int s,struct sockaddr_in ecoute,struct sockaddr_in envoie){
 
     int a = generateRandInt(5000);
     char buff [DEFAULTSIZE] ;
@@ -535,10 +534,11 @@ struct sockaddr_in envoie){
     FD_ZERO(&fd_monitor);
     FD_SET(s, &fd_monitor);
 
-    tv.tv_sec = 30;
-    tv.tv_usec = 0;
+    
 
     while(1){
+        tv.tv_sec = 5;
+        tv.tv_usec = 0;
         send_to_establish(s,packetToSend,DEFAULTSIZE,0,(struct sockaddr*)&envoie,size);
 
         retval = select(1, &fd_monitor, NULL, NULL, &tv);
