@@ -174,7 +174,7 @@ struct sockaddr_in prepaAddrLoc(){
     struct sockaddr_in sock ;
     sock.sin_family=AF_INET;
     sock.sin_addr.s_addr= htonl(INADDR_ANY);
-    sock.sin_port=htons(3200);
+    sock.sin_port=htons(3200); //PK 3200 ??
 
     return sock;
 }

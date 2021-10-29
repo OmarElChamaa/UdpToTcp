@@ -19,13 +19,18 @@
 #include "packet.h"
 
 
-int etablissementConnexion (int s,int ipDistante,int portLocal,int portEcoute,struct sockaddr_in client,socklen_t size,char *buf){
+int etablissementConnexionServer (int s,struct sockaddr_in ecoute,
+struct sockaddr_in envoie){
+   
+    int a = generateRandInt(5000);
+    char buff [DEFAULTSIZE] ;
+
     int retour=0;
-    struct packet p = init_packet();
-    SOCKET sock = creationSocket(sock);//creation de socket
-    struct sockaddr_in me = prepaAddrLoc();//preparation de l'adresse et le port
-    binding(sock,me);//lier le port
-    int alea_b = generateRandInt(500);//nb aléatoire
+    
+    
+
+    binding(s,ecoute);//lier le port
+
 
     char buf[DEFAULTSIZE];
     memset(buf, '\0',DEFAULTSIZE);
@@ -46,58 +51,61 @@ int etablissementConnexion (int s,int ipDistante,int portLocal,int portEcoute,st
 //on peut ajouter une section de test temporaire pour tester si nos adresse et port sont justes
     while(1){
 
-    retval = select(1, &fd_monitor, NULL, NULL, &tv);
-    if(retval==-1){
-        printf("select etablissement\n");
-    }
-    if(FD_ISSET(s,&fd_monitor)){
-                printf("data ready");//Je receve et je test et si tout va bien je renvois avec les nouvelles valeurs
+        retval = select(1, &fd_monitor, NULL, NULL, &tv);
+        if(retval==-1){
+            close(s);
+            raler("select etablissement\n");
+        }
+        if(FD_ISSET(s,&fd_monitor)){
+            printf("data ready");//Je receve et je test et si tout va bien je renvois avec les nouvelles valeurs
 
-    if((retour=recvfrom(s,buf,DEFAULTSIZE,0,(struct sockaddr*)&client,&size))==-1){
-        raler("recvfrom");
-    }
+            if((retour=recvfrom(s,buf,DEFAULTSIZE,0,(struct sockaddr*)&ecoute,
+            sizeof(ecoute)))==-1){
+                raler("recvfrom");
+            }
 
-    char*inter_buf = buf;
-    //analyse de données reçu :
-    p=generatePacketFromBuf(inter_buf);
-    //preparation de donnée (ACK à envoyer)
+            char * inter_buf = buf;
+            //analyse de données reçu :
+            struct packet p=generatePacketFromBuf(inter_buf);
+            //preparation de donnée (ACK à envoyer)
 
-    p.type.ACK=p.type.SYN+1;
-    p.type.SYN=alea_b;
-    p.id ++;
-    char*inter2_buf = generatePacket(p);
-    //envoie d'ACK
-    socklen_t socklen = sizeof(struct sockaddr_in);
-    send_to_establish(sock,inter2_buf, DEFAULTSIZE,0,(struct sockaddr*)&client, socklen);
+            p.type.ACK=p.type.SYN+1;
+            p.type.SYN=a;
+            //p.id ++; 
 
-    
-    //Attendre la confirmation de reçu de l'ACK de la part de source 
-    char inter3_buf[DEFAULTSIZE];
-    memset(inter3_buf, '\0',DEFAULTSIZE);
+            char * inter2_buf = generatePacket(p);
+            //envoie d'ACK
+            //socklen_t socklen = sizeof(struct sockaddr_in); Cette ligne sert a quoi ?
+            send_to_establish(s,inter2_buf, DEFAULTSIZE,0,
+            (struct sockaddr*)&envoie,sizeof(envoie));
 
-    int r =recvfrom(s,inter3_buf,DEFAULTSIZE+1,0,(struct sockaddr*)&client,&size);
-    if(r==-1){
-        raler("recvfrom 1\n");
-    }
-    p=generatePacketFromBuf(inter3_buf);
-    if(p.acq==p.seq+1){
-        printf("connexion établie :)\n");
-        return 1;
-    }
-    else{
-        return-1;
-    }
+            //Attendre la confirmation de reçu de l'ACK de la part de source 
+            char inter3_buf[DEFAULTSIZE];
+            memset(inter3_buf, '\0',DEFAULTSIZE);
 
-    }
+            int r =recvfrom(s,inter3_buf,DEFAULTSIZE+1,0,(struct sockaddr*)&client,&size);
+            if(r==-1){
+                raler("recvfrom 1\n");
+            }
+            p=generatePacketFromBuf(inter3_buf);
+            if(p.acq==p.seq+1){
+                printf("connexion établie :)\n");
+                return 1;
+            }
+            else{
+                return-1;
+            }
 
-    else {//rien sur le socket?
+        }
+
+        else {//rien sur le socket?
             printf("rien reçu .. \nDeuxième tentative en cours\nMerci de patienter\n");
             continue;
 
         }
-}
+    }
 
-return -1;
+    return -1;
 }
 
 
@@ -105,44 +113,44 @@ return -1;
 
 //fct main
 int main(int argc, char const *argv[]) {
-    if(argc != 2)
+    if(argc != 4)
     raler("USAGE ...");
 
    // senderUDP();
-     SOCKET sock = 0;
-     sock = creationSocket(sock);
+    int s = 0;
+    s=creationSocket(s);
 
+    char *ipDistante=argv[1];
+    char *portLocal=argv[2];
+    char *portEcoute=argv[3];
 
-    char buf[1024];// a modifer !
-    const char * pointer;
-    char *dst = malloc(100);
+    int ipDistInt=atoi(ipDistante);
+    int portLocalInt=atoi(portLocal);
+    int portEcouteInt=atoi(portEcoute);
 
-    struct sockaddr_in sin; //preparation de l'adresse locale
-    struct sockaddr_in client;
+    ecoute.sin_family = AF_INET;
+    ecoute.sin_port = htons(portLocalInt);
+    ecoute.sin_addr.s_addr = INADDR_ANY ;
 
-    sin.sin_addr.s_addr=htonl(INADDR_ANY); //initialisation de l'adresse = IP de la machine locale
-    sin.sin_family=AF_INET;  // IPV4
-    sin.sin_port=htons(6666); //Port
-    printf("%s\n",inet_ntop(AF_INET,&sin.sin_addr,dst ,100));
-
-    memset(buf,'\0',1024);
+    envoie.sin_family = AF_INET;
+    envoie.sin_port = htons(portEcouteInt);
+    envoie.sin_addr.s_addr = INADDR_ANY ;
     
     int verif;
-    socklen_t size=sizeof(sin);
-    if((verif= bind(sock, (struct sockaddr*)&sin, size))==-1){
+    if((verif= bind(sock, (struct sockaddr*)&ecoute, 
+    sizeof(ecoute)))==-1){
+        close(s);
         raler("bind");
     }
 
 
-
-int ipDistante,portLocal,portEcoute;
-    if ((etablissementConnexion(sock,ipDistante,portLocal,portEcoute,client,strlen(buf),buf))==-1){
+    if ((etablissementConnexionServer(s,ecoute,envoie))==-1){
+        close(s);
         raler("connexion non établie");
-        exit(-1);
     };
 
 ///Connexion établie :)
 
-    close(sock);
+    close(s);
     return 0;
 }
