@@ -453,7 +453,7 @@ struct sockaddr_in envoie){
     FD_SET(s, &fd_monitor);
     socklen_t size=sizeof(ecoute);
 
-    tv.tv_sec = 5;
+    tv.tv_sec = 30;
     tv.tv_usec = 0;
 
     while(1){
@@ -515,6 +515,8 @@ struct sockaddr_in envoie){
     int a = generateRandInt(5000);
     char buff [DEFAULTSIZE] ;
 
+    binding(s,ecoute);
+
     struct packet p=init_packet() ;
     socklen_t size=sizeof(ecoute);
 
@@ -533,7 +535,7 @@ struct sockaddr_in envoie){
     FD_ZERO(&fd_monitor);
     FD_SET(s, &fd_monitor);
 
-    tv.tv_sec = 5;
+    tv.tv_sec = 30;
     tv.tv_usec = 0;
 
     while(1){

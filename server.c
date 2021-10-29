@@ -121,6 +121,10 @@ int main(int argc, char const *argv[]) {
     int s = 0;
     s=creationSocket(s);
 
+
+    struct sockaddr_in ecoute;
+    struct sockaddr_in envoie;
+
     char *ipDistante=argv[1];
     char *portLocal=argv[2];
     char *portEcoute=argv[3];
