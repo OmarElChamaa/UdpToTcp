@@ -19,7 +19,7 @@
 #include "packet.h"
 
 
-int etablissementConnexion (int s,int ipDistante,int portLocal,int portEcoute,struct sockaddr_in client,socklen_t size,char *buf){
+int etablissementConnexionServer (int s,int ipDistante,int portLocal,int portEcoute,struct sockaddr_in client,socklen_t size,char *buf){
     int retour=0;
     struct packet p = init_packet();
     SOCKET sock = creationSocket(sock);//creation de socket
@@ -136,7 +136,7 @@ int main(int argc, char const *argv[]) {
 
 
 int ipDistante,portLocal,portEcoute;
-    if ((etablissementConnexion(sock,ipDistante,portLocal,portEcoute,client,strlen(buf),buf))==-1){
+    if ((etablissementConnexionServer(sock,ipDistante,portLocal,portEcoute,client,strlen(buf),buf))==-1){
         raler("connexion non établie");
         exit(-1);
     };

@@ -21,7 +21,7 @@
 
 int id =0;
 
-int etablissementConnexion(int s,struct sockaddr_in ecoute,
+int etablissementConnexionSource(int s,struct sockaddr_in ecoute,
 struct sockaddr_in envoie){
 
     int a = generateRandInt(5000);
@@ -192,7 +192,7 @@ int main(int argc, char * argv[]){
     int s = 0;
     s=creationSocket(s);
 
-    if(etablissementConnexion(s,ecoute,envoie)==0){
+    if(etablissementConnexionSource(s,ecoute,envoie)==0){
         printf("Connexion etablie avec Succes \n ");
         printf("/******************************/\n");
     }else{
