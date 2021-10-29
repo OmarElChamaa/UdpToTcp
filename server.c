@@ -142,7 +142,7 @@ int main(int argc, char const *argv[]) {
         close(s);
         raler("bind");
     }
-
+    
 
     if ((etablissementConnexionServer(s,ecoute,envoie))==-1){
         close(s);
