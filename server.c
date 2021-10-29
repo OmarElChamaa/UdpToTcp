@@ -72,8 +72,9 @@ struct sockaddr_in envoie){
             p.type.ACK=p.type.SYN+1;
             p.type.SYN=a;
             //p.id ++; 
-
-            char * inter2_buf = generatePacket(p);
+            char * inter2_buf = malloc(sizeof(char)*DEFAULTSIZE) ;
+            memset(inter2_buf,'\0',DEFAULTSIZE);
+            generatePacket(p,inter2_buf);
             //envoie d'ACK
             //socklen_t socklen = sizeof(struct sockaddr_in); Cette ligne sert a quoi ?
             send_to_establish(s,inter2_buf, DEFAULTSIZE,0,
