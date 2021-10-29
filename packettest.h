@@ -19,6 +19,7 @@
 #include <string.h>
 typedef int SOCKET;
 #define DEFAULTSIZE 416
+int ID =0;
 
 
 
@@ -349,7 +350,7 @@ void generatePacket(struct packet p,char * packetHeader2){
 /////////////////////////////////FCT convert_premiers_char/////////////////////////////////
 //Fonction qui sert à recuperer les n premier octets d'un string de entiers
 //et renvoi le numéro 
-//ex pour la cheine "1111 1111" et n =4 il renvoie 15
+//ex pour la chaine "1111 1111" et n =4 il renvoie 15
 int convert_premiers_char (char * string,int size){
     int i=0, resultat=0;
     char * c= malloc(sizeof(char *));
@@ -432,4 +433,142 @@ return ;
 
 
 
+//////////////////////////////////FCT ETABLISSEMENT DE CONNEXION COTÉ SERVEUR ////////////////
+int etablissementConnexionServer (int s,struct sockaddr_in ecoute,
+struct sockaddr_in envoie){
+   
+    int a = generateRandInt(5000);
+   // char buff [DEFAULTSIZE] ;
+    int retour=0;
 
+    binding(s,ecoute);//lier le port
+    char buf[DEFAULTSIZE];
+    memset(buf, '\0',DEFAULTSIZE);
+
+    fd_set fd_monitor;
+    struct timeval tv;
+    int retval;
+
+    FD_ZERO(&fd_monitor);
+    FD_SET(s, &fd_monitor);
+    socklen_t size=sizeof(ecoute);
+
+    tv.tv_sec = 5;
+    tv.tv_usec = 0;
+
+    while(1){
+
+        retval = select(1, &fd_monitor, NULL, NULL, &tv);
+        if(retval==-1){
+            close(s);
+            raler("select etablissement\n");
+        }
+        if(FD_ISSET(s,&fd_monitor)){
+            printf("data ready");//Je receve et je test et si tout va bien je renvois avec les nouvelles valeurs
+
+            if((retour=recvfrom(s,buf,DEFAULTSIZE,0,(struct sockaddr*)&ecoute,&size))==-1){
+                raler("recvfrom");
+            }
+
+            char * inter_buf = buf;
+            //analyse de données reçu :
+            struct packet p=generatePacketFromBuf(inter_buf);
+            //preparation de donnée (ACK à envoyer)
+            p.type.ACK=p.type.SYN+1;
+            p.type.SYN=a;
+            p.id=ID++; 
+            char * inter2_buf = malloc(sizeof(char)*DEFAULTSIZE) ;
+            memset(inter2_buf,'\0',DEFAULTSIZE);
+            generatePacket(p,inter2_buf);
+            //envoie d'ACK
+            send_to_establish(s,inter2_buf, DEFAULTSIZE,0,(struct sockaddr*)&envoie,size);
+
+            //Attendre la confirmation de reçu de l'ACK de la part de source 
+            char inter3_buf[DEFAULTSIZE];
+            memset(inter3_buf, '\0',DEFAULTSIZE);
+            recvfrom(s,inter3_buf,DEFAULTSIZE+1,0,(struct sockaddr*)&ecoute,&size);
+            p=generatePacketFromBuf(inter3_buf);
+            if(p.acq==p.seq+1){
+                printf("connexion établie :)\n");
+                return 1;
+            }
+            else{
+                return-1;
+            }
+        }
+        else {//rien sur le socket?
+            printf("rien reçu .. \nDeuxième tentative en cours\nMerci de patienter\n");
+            continue;
+        }
+    }
+    return -1;
+}
+//////////////////////////////////END FUNCTION ///////////////////////////////////////////
+
+
+//////////////////////////////FCT ETABLISSEMENT DE CONNEXION COTÉ SOURCE /////////////////
+
+
+int etablissementConnexionSource(int s,struct sockaddr_in ecoute,
+struct sockaddr_in envoie){
+
+    int a = generateRandInt(5000);
+    char buff [DEFAULTSIZE] ;
+
+    struct packet p=init_packet() ;
+    socklen_t size=sizeof(ecoute);
+
+    p.id=ID++ ;
+    p.type.SYN=1;
+    p.seq=a;
+
+    char * packetToSend = malloc(sizeof(char)*DEFAULTSIZE) ;
+    memset(packetToSend,'\0',DEFAULTSIZE);
+    generatePacket(p,packetToSend) ;
+
+    fd_set fd_monitor;
+    struct timeval tv;
+    int retval;
+
+    FD_ZERO(&fd_monitor);
+    FD_SET(s, &fd_monitor);
+
+    tv.tv_sec = 5;
+    tv.tv_usec = 0;
+
+    while(1){
+        send_to_establish(s,packetToSend,DEFAULTSIZE,0,(struct sockaddr*)&envoie,size);
+
+        retval = select(1, &fd_monitor, NULL, NULL, &tv);
+            if(retval==-1){
+                printf("select etablissement\n");
+            }
+
+        if(FD_ISSET(s,&fd_monitor)){
+                printf("data ready");//Je receve et je test et si tout va bien je renvois avec les nouvelles valeurs
+                //recevfrom
+                int r =recvfrom(s,buff,DEFAULTSIZE+1,0,(struct sockaddr*)&ecoute,&size);
+                if(r==-1){
+                    raler("recvfrom 1\n");
+                }
+                //deroulement de test
+                p=generatePacketFromBuf(buff);//on genere le paquet du buf recu
+                if(p.type.ACK==a+1){
+                    p.acq=p.seq+1;//ack = b+1
+                    p.id=ID++;//id++
+                    //envoyer le dernier paquet en confirmant avoir recu l'ack
+                    send_to_establish(s,packetToSend,DEFAULTSIZE,0,(struct sockaddr * )&envoie,size);
+                }
+                else{
+                    printf("mauvais comportement du serveur en 3 way-shakehand\n");
+                    exit(EXIT_FAILURE);
+                }
+                printf("connexion établie!");
+                ID=0;
+                exit(EXIT_SUCCESS);
+        }else{
+            continue;
+        }
+    }
+}
+//////////////////////////////////END FUNCTION ///////////////////////////////////////////

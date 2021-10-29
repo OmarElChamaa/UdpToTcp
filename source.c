@@ -97,6 +97,7 @@ struct sockaddr_in envoie){
 
 // }
 
+
 void stopNwait(int s,struct sockaddr_in envoie,
 struct sockaddr_in ecoute,struct packet p){
     
