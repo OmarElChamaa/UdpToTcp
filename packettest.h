@@ -13,7 +13,6 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 
-
 #include <errno.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
@@ -197,10 +196,18 @@ int generateRandInt(int max){
 
 
 ///////////////////////FCT bind////////////////////////////////////////////////////////////
-void binding(int sock, struct sockaddr_in addr){
-    if ((sock=(bind(sock,(struct sockaddr *)&addr,sizeof(struct sockaddr_in)))==-1)){
+int binding(int sock, int myPort,struct sockaddr_in addr){
+    int x ;
+     
+    socklen_t address_len =  sizeof(struct sockaddr_in) ;
+    addr.sin_family = AF_INET; 
+    addr.sin_port = htons(myPort); 
+    addr.sin_addr.s_addr = htonl(INADDR_ANY) ;
+    if((x = bind(sock ,(struct sockaddr * ) &addr , address_len )) == -1 ){
         raler("bind");
     }
+    return x ;
+    
 }
 ///////////////////////////////////END OF FUNCTION//////////////////////////////////////////
 
@@ -418,8 +425,7 @@ struct packet  generatePacketFromBuf(char * buf){
 
 /////////////////////////////////FCT send_to_establish/////////////////////////////////
 void send_to_establish (int fd, const void *buf, size_t size, int flags,const struct sockaddr *addr, socklen_t addr_len){
-ssize_t n = sendto(fd,buf,size,flags,(struct sockaddr*)&addr,
-       addr_len);
+ssize_t n = sendto(fd,buf,size,flags,(struct sockaddr*)&addr,addr_len);
             if(n==-1){
                 perror("sendto etabllissement \n");
                 if(close(fd)==-1){
@@ -441,7 +447,7 @@ struct sockaddr_in envoie){
    // char buff [DEFAULTSIZE] ;
     int retour=0;
 
-    binding(s,ecoute);//lier le port
+    //binding(s,ecoute);//lier le port
     char buf[DEFAULTSIZE];
     memset(buf, '\0',DEFAULTSIZE);
 
@@ -453,12 +459,12 @@ struct sockaddr_in envoie){
     FD_SET(s, &fd_monitor);
     socklen_t size=sizeof(ecoute);
 
-   
+  
 
     while(1){
-    tv.tv_sec = 5;
-    tv.tv_usec = 0;
-        retval = select(1, &fd_monitor, NULL, NULL, &tv);
+         tv.tv_sec = 10;
+         tv.tv_usec = 0;
+        retval = select(FD_SETSIZE+1, &fd_monitor, NULL, NULL, &tv);
         if(retval==-1){
             close(s);
             raler("select etablissement\n");
@@ -466,9 +472,10 @@ struct sockaddr_in envoie){
         if(FD_ISSET(s,&fd_monitor)){
             printf("data ready");//Je receve et je test et si tout va bien je renvois avec les nouvelles valeurs
 
-            if((retour=recvfrom(s,buf,DEFAULTSIZE,0,(struct sockaddr*)&ecoute,&size))==-1){
+            if((retour=recvfrom(s,buf,DEFAULTSIZE+1,0,(struct sockaddr*)&ecoute,&size))==-1){
                 raler("recvfrom");
             }
+            printf("data recieved\n");
 
             char * inter_buf = buf;
             //analyse de données reçu :
@@ -481,7 +488,7 @@ struct sockaddr_in envoie){
             memset(inter2_buf,'\0',DEFAULTSIZE);
             generatePacket(p,inter2_buf);
             //envoie d'ACK
-            send_to_establish(s,inter2_buf, DEFAULTSIZE,0,(struct sockaddr*)&envoie,size);
+            sendto(s,inter2_buf, DEFAULTSIZE,0,(struct sockaddr*)&envoie,size);
 
             //Attendre la confirmation de reçu de l'ACK de la part de source 
             char inter3_buf[DEFAULTSIZE];
@@ -497,7 +504,7 @@ struct sockaddr_in envoie){
             }
         }
         else {//rien sur le socket?
-            printf("Rien reçu .. \nNouvelle tentative en cours\nMerci de patienter\n\n\n");
+            printf("rien reçu .. \nDeuxième tentative en cours\nMerci de patienter\n");
             continue;
         }
     }
@@ -509,18 +516,18 @@ struct sockaddr_in envoie){
 //////////////////////////////FCT ETABLISSEMENT DE CONNEXION COTÉ SOURCE /////////////////
 
 
-int etablissementConnexionSource(int s,struct sockaddr_in ecoute,struct sockaddr_in envoie){
+int etablissementConnexionSource(int s,struct sockaddr_in ecoute,
+struct sockaddr_in envoie){
 
     int a = generateRandInt(5000);
     char buff [DEFAULTSIZE] ;
 
-    binding(s,ecoute);
-
     struct packet p=init_packet() ;
-    socklen_t size=sizeof(ecoute);
+    socklen_t size=sizeof(envoie);
 
     p.id=ID++ ;
     p.type.SYN=1;
+    p.acq = 16 ; 
     p.seq=a;
 
     char * packetToSend = malloc(sizeof(char)*DEFAULTSIZE) ;
@@ -534,14 +541,14 @@ int etablissementConnexionSource(int s,struct sockaddr_in ecoute,struct sockaddr
     FD_ZERO(&fd_monitor);
     FD_SET(s, &fd_monitor);
 
-    
+   
 
     while(1){
-        tv.tv_sec = 5;
+        tv.tv_sec = 10;
         tv.tv_usec = 0;
-        send_to_establish(s,packetToSend,DEFAULTSIZE,0,(struct sockaddr*)&envoie,size);
+        sendto(s,packetToSend,DEFAULTSIZE,0,(struct sockaddr*)&envoie,size);
 
-        retval = select(1, &fd_monitor, NULL, NULL, &tv);
+        retval = select(FD_SETSIZE+1, &fd_monitor, NULL, NULL, &tv);
             if(retval==-1){
                 printf("select etablissement\n");
             }
@@ -559,7 +566,7 @@ int etablissementConnexionSource(int s,struct sockaddr_in ecoute,struct sockaddr
                     p.acq=p.seq+1;//ack = b+1
                     p.id=ID++;//id++
                     //envoyer le dernier paquet en confirmant avoir recu l'ack
-                    send_to_establish(s,packetToSend,DEFAULTSIZE,0,(struct sockaddr * )&envoie,size);
+                    sendto(s,packetToSend,DEFAULTSIZE,0,(struct sockaddr * )&envoie,size);
                 }
                 else{
                     printf("mauvais comportement du serveur en 3 way-shakehand\n");
@@ -574,3 +581,4 @@ int etablissementConnexionSource(int s,struct sockaddr_in ecoute,struct sockaddr
     }
 }
 //////////////////////////////////END FUNCTION ///////////////////////////////////////////
+
