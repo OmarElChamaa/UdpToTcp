@@ -11,7 +11,7 @@ import getopt
 import time
 
 ECN_ACTIVE = 1
-ECN_DISABLED = 2
+ECN_DISABLED = 0
 
 TYPE_SYN = 1
 TYPE_FIN = 2
@@ -51,7 +51,7 @@ def parse_type(t):
 
 
 def parse_ecn(e):
-    if e == ECN_ACTIVE:
+    if e >= ECN_ACTIVE:
         print("ECN bit is enabled")
     elif e == ECN_DISABLED:
         print("ECN bit is disable")
@@ -173,11 +173,12 @@ while con:
                         data_tmp[5] = ECN_ACTIVE
                         data = bytes(data_tmp)
                         tagged = True
-                    sock_sender.sendto(data, (dest_recv, port_recv))
+                    sock_recv.sendto(data, (dest_recv, port_recv))
                 else:
                     if random.random() <= 0.7:
-                        sock_sender.sendto(data, (dest_recv, port_recv))
-
+                        sock_recv.sendto(data, (dest_recv, port_recv))
+            else:
+                sock_recv.sendto(data, (dest_recv, port_recv))
 
             
             
@@ -188,7 +189,7 @@ while con:
             
         elif s == sock_recv:
             data, addr = sock_recv.recvfrom(64)
-            sock_recv.sendto(data, (dest_sender, port_sender))
+            sock_sender.sendto(data, (dest_sender, port_sender))
             if debug :
                 print("message {} received from receiver".format(data))
                 #parse_new_messages(data)
