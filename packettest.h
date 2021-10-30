@@ -25,23 +25,23 @@ int ID =0;
 
 typedef struct Type
 {
-    int ACK ; 
-    int RST ;
-    int FIN; 
-    int SYN; 
+    int ACK :2; 
+    int RST :2;
+    int FIN :2; 
+    int SYN :2; 
   
 }Type;
 
 
 typedef struct packet
 {
-    int id ; 
-    struct Type type ; 
-    int seq ;
-    int acq; 
-    int ecn ;
-    int fenetre ; 
-    void * data ; 
+    int id : 8 ; 
+    struct Type type  ; 
+    int seq : 16 ;
+    int acq : 16 ; 
+    int ecn : 8 ;
+    int fenetre :8 ; 
+    char * data; 
 }packet;
 
 
@@ -206,8 +206,7 @@ int binding(int sock, int myPort,struct sockaddr_in addr){
     if((x = bind(sock ,(struct sockaddr * ) &addr , address_len )) == -1 ){
         raler("bind");
     }
-    return x ;
-    
+    return x ;  
 }
 ///////////////////////////////////END OF FUNCTION//////////////////////////////////////////
 
