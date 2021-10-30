@@ -307,6 +307,7 @@ struct sockaddr_in envoie){
     p.id=ID++ ;
     p.type.SYN=1;
     p.seq=a;
+    printf("ETAPE1 : J'ai mit seq à %d et ack à %d\n",p.seq,p.acq);
 
     char * packetToSend =generatePacket(p) ;
 
@@ -323,7 +324,6 @@ struct sockaddr_in envoie){
         tv.tv_sec = 10;
         tv.tv_usec = 0;
         sendto(s,packetToSend,DEFAULTSIZE,0,(struct sockaddr*)&envoie,size);
-        printf("J'ai prepare mon premier paquet a envoyer \n");
 
         retval = select(FD_SETSIZE+1, &fd_monitor, NULL, NULL, &tv);
             if(retval==-1){
@@ -331,34 +331,36 @@ struct sockaddr_in envoie){
             }
 
         if(FD_ISSET(s,&fd_monitor)){
-                printf("data ready");//Je receve et je test et si tout va bien je renvois avec les nouvelles valeurs
+                printf("data ready\n");//Je receve et je test et si tout va bien je renvois avec les nouvelles valeurs
                 //recevfrom
                 int r =recvfrom(s,buff,DEFAULTSIZE+1,0,(struct sockaddr*)&ecoute,&size);
                 if(r==-1){
                     raler("recvfrom 1\n");
                 }
-                printf("J'ai recu l'ack \n");
                 //deroulement de test
                 p=generatePacketFromBuf(buff);//on genere le paquet du buf recu
+                printf("ETAPE2 : J'ai recu seq à %d et ack à %d\n",p.seq,p.acq);
+
                 if(p.acq==a+1){
                     p.acq=p.seq+1;//ack = b+1
-                    p.seq=p.acq;
-                    p.id=ID++;//id++                printf("J'ai recu qqch \n");
+                    p.seq=a+1;
+                    p.type.SYN=0;
+                    p.id=ID++;//id++               
+            printf("ETAPE3 : J'ai mit seq à %d et ack à %d\n",p.seq,p.acq);
                     //envoyer le dernier paquet en confirmant avoir recu l'ack
-                    printf("J'ai prepare mon paquet final a envoyer \n");
-
-                    r=sendto(s,packetToSend,DEFAULTSIZE,0,(struct sockaddr * )&envoie,size);
+                    char * packetToSend2 =generatePacket(p) ;
+                    r=sendto(s,packetToSend2,DEFAULTSIZE,0,(struct sockaddr * )&envoie,size);
                     if(r==-1){
                         raler("send paquet");
                     }
                     printf("J'ai envoyé mon paquet final\n");
-
+                    free(packetToSend2);
                 }
                 else{
                     printf("mauvais comportement du serveur en 3 way-shakehand\n");
                     exit(EXIT_FAILURE);
                 }
-                printf("connexion établie!");
+                printf("connexion établie!\n");
                 ID=0;
                 exit(EXIT_SUCCESS);
         }else{
@@ -406,12 +408,11 @@ struct sockaddr_in envoie){
             if((retour=recvfrom(s,buf,DEFAULTSIZE+1,0,(struct sockaddr*)&ecoute,&size))==-1){
                 raler("recvfrom");
             }
-            printf("J'ai recu le premier paquet\n");
 
             char * inter_buf = buf;
             //analyse de données reçu :
             struct packet p=generatePacketFromBuf(inter_buf);
-            printf("J'ai recuperé les donnée du premier paquet \n");
+            printf("ETAPE1 : J'ai recu seq à %d et ack à %d\n",p.seq,p.acq);
 
             //preparation de donnée (ACK à envoyer)
             p.type.ACK=16;
@@ -419,8 +420,9 @@ struct sockaddr_in envoie){
             p.seq=b;
             p.type.SYN=1;
             p.id=ID++; 
+            printf("ETAPE2 :J'ai mit seq à %d et ack à %d\n",p.seq,p.acq);
+
             char *inter2_buf= generatePacket(p);
-            printf("J'ai preparé l'ack \n");
 
             //envoie d'ACK
             int sen=sendto(s,inter2_buf, DEFAULTSIZE,0,(struct sockaddr*)&envoie,size);
@@ -437,7 +439,11 @@ struct sockaddr_in envoie){
                 raler("sender \n");
             }
             printf("J'ai recu la confirmation de l'ack \n");
+            
             p=generatePacketFromBuf(inter3_buf);
+            //free(inter3_buf);
+
+            printf("ETAPE3: RECU seq = %d et l'ack =%d\n",p.seq,p.acq);
             if(p.acq==b+1){
                 printf("connexion établie :)\n");
                 return 1;
