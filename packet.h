@@ -332,7 +332,7 @@ struct sockaddr_in envoie){
             }
 
         if(FD_ISSET(s,&fd_monitor)){
-                printf("data ready\n");//Je receve et je test et si tout va bien je renvois avec les nouvelles valeurs
+                printf("data ready\n");//Je receive et je test et si tout va bien je renvois avec les nouvelles valeurs
                 //recevfrom
                 int r =recvfrom(s,buff,DEFAULTSIZE+1,0,(struct sockaddr*)&ecoute,&size);
                 if(r==-1){
@@ -378,10 +378,8 @@ int etablissementConnexionServer (int s,struct sockaddr_in ecoute,
 struct sockaddr_in envoie){
    
     int b = generateRandInt(100);
-   // char buff [DEFAULTSIZE] ;
     int retour=0;
 
-    //binding(s,ecoute);//lier le port
     char buf[DEFAULTSIZE];
     memset(buf, '\0',DEFAULTSIZE);
 
@@ -442,7 +440,6 @@ struct sockaddr_in envoie){
             printf("J'ai recu la confirmation de l'ack \n");
             
             p=generatePacketFromBuf(inter3_buf);
-            //free(inter3_buf);
 
             printf("ETAPE3: RECU seq = %d et l'ack =%d\n",p.seq,p.acq);
             if(p.acq==b+1){
@@ -463,3 +460,71 @@ struct sockaddr_in envoie){
 //////////////////////////////////END FUNCTION ///////////////////////////////////////////
 
 
+
+
+
+//////////////////////////////////FCT STOP AND WAIT COTÉ SERVEUR /////////////////////////
+
+    void stopNwaitServer (int s,struct sockaddr_in ecoute,
+    struct sockaddr_in envoie){
+
+        int numAck=0,retour=0;
+
+        char*buf=malloc(sizeof(char)*DEFAULTSIZE);
+        memset(buf,'\0',DEFAULTSIZE);
+
+        fd_set fd_monitor;
+        struct timeval tv;
+        int retval;
+
+        FD_ZERO(&fd_monitor);
+        FD_SET(s, &fd_monitor);
+        socklen_t size=sizeof(ecoute);
+
+  
+        while(1){
+            tv.tv_sec = 4;
+            tv.tv_usec = 0;
+            retval = select(FD_SETSIZE+1, &fd_monitor, NULL, NULL, &tv);
+            if(retval==-1){
+            close(s);
+            raler("select etablissement\n");
+            }
+            if(FD_ISSET(s,&fd_monitor)){
+            printf("data ready");//Je receve et je test et si tout va bien je renvois avec les nouvelles valeurs
+
+            if((retour=recvfrom(s,buf,DEFAULTSIZE+1,0,(struct sockaddr*)&ecoute,&size))==-1){
+                raler("recvfrom");
+            }
+            char * inter_buf = buf;
+            //recuperer les données recues:
+            struct packet p=generatePacketFromBuf(inter_buf);
+            free(inter_buf);
+            printf("ETAPE1 : J'ai recu un paquet son seq est à %d\n",p.seq);
+            //Afficher le msg reçu :
+            if(p.seq==numAck){
+            printf("Données reçues : %s\n",p.data);
+           // numSeq++%2;
+            numAck=(numAck+1)%2;
+            printf("je recoit un nouveau paquet et donc j'incremente ACK :%d \n",numAck);
+            }
+            struct packet p2= init_packet();
+            p2.acq=numAck;
+            char *inter2_buf= generatePacket(p2);
+            //envoie d'ACK
+            int sen=sendto(s,inter2_buf, DEFAULTSIZE,0,(struct sockaddr*)&envoie,size);
+            if(sen==-1){
+                raler("sender \n");
+            }
+            printf("Etape 2: J'ai envoyé l'ack \n");
+            free(inter2_buf);
+            continue;
+        }
+        printf("Rien n'est recu\nNouvlelle tentative en cours../..\n");
+        continue;
+        }
+
+        free(buf);
+        return;
+    }
+    //////////////////////////////////END FUNCTION ///////////////////////////////////////////

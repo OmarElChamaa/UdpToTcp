@@ -105,15 +105,8 @@ int main (){
     memset(&envoie,0,sizeof(envoie));
     envoie.sin_family = AF_INET; 
     envoie.sin_port = htons(4444); 
-    //envoie.sin_addr.s_addr = htonl(INADDR_ANY) ;
     inet_pton(AF_INET,"127.0.0.1",&(envoie.sin_addr));
 
-    //Make connection to server socket so we can use send() and recv() to read and write the server
-    // if(connect(s, (struct sockaddr *) &envoie, sizeof(struct sockaddr)) == -1 ) {
-    //     close(s);
-    //     fprintf(stderr, "Failed to connect to remote server!\n");
-    //     exit(EXIT_FAILURE);
-    // }
     struct packet p = init_packet();
 
 
