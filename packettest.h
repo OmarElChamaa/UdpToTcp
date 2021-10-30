@@ -281,7 +281,7 @@ const char  * intToEightBit(int x){
 /////////////////////////////////////FCT AJOUT N YERO //////////////////
 char  * ajoutNZero(int x,int nbZero){
 
-    char * str=malloc(sizeof(char *));
+    char  str[nbZero];
     sprintf(str,"%d",x);
     int numDigits = strlen(str);
 
@@ -292,7 +292,7 @@ char  * ajoutNZero(int x,int nbZero){
         //raler("ajoutNZero");
     } 
 
-    char * v=malloc(sizeof(char *));
+    char v[aAjouter];
 
     for(int i = 0 ; i<aAjouter ; i++){
         strcat(v,"0");
@@ -311,26 +311,12 @@ char  * ajoutNZero(int x,int nbZero){
 void generatePacket(struct packet p,char * packetHeader2){
 
     const char *id = ajoutNZero( dec_to_Intbin(p.id),8);
-    
-    printf("ID IS %s \n ",id);
     int x = p.type.ACK+p.type.RST+p.type.FIN+p.type.SYN ; 
-
-    const char *type = intToEightBit(dec_to_Intbin(x));
-    printf("type is %s \n ",type);
-
+    const char *type = ajoutNZero(dec_to_Intbin(x),8);
     char *seq = ajoutNZero(dec_to_Intbin(p.seq),16);
-
-    printf("seq is %s \n ",seq);
-
-
     char *acq = ajoutNZero(dec_to_Intbin(p.acq),16);
-
-    printf("acq is %s \n ",acq);
-    const char *ecn = intToEightBit(dec_to_Intbin(p.ecn));
-
-    printf("ecn is %s \n ",ecn);
-    const char *fen = intToEightBit(dec_to_Intbin(p.fenetre));
-    printf("fen is %s \n ",fen);
+    const char *ecn = ajoutNZero(dec_to_Intbin(p.ecn),8);
+    const char *fen = ajoutNZero(dec_to_Intbin(p.fenetre),8);
 
     strcat(packetHeader2,id);
     printf("PACKET HEADER IS   : %s , taille : %ld \n ID IS %s \n",packetHeader2,strlen(id),id);

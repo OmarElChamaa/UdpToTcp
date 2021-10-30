@@ -53,7 +53,6 @@ typedef struct packet
 
 /////////////////////FCT inititialisation d'un paquet//////////////////////////////////////
 struct packet  init_packet(){
-    //struct packet  p=malloc(sizeof(struct packet ));
     struct packet p ; 
     p.acq=0;
     p.ecn=0;
@@ -64,7 +63,6 @@ struct packet  init_packet(){
     p.type.FIN=0;
     p.type.RST=0;
     p.type.SYN=0;
-    //il faut free(p) apres l'appelle a cette fct
     return p;
 }
 //////////////////////////////////END OF FUNCTION//////////////////////////////////////////
@@ -146,6 +144,7 @@ char* generatePacket(struct packet p ){
     char *acq=ajoutNZero(dec_to_Intbin(p.acq),16);
     char * ecn=ajoutNZero( dec_to_Intbin(p.ecn),8);
     char *fen=ajoutNZero(dec_to_Intbin(p.fenetre),8);
+    
 
     strcat(packetHeader2,id);
     printf("PACKET HEADER IS   : %s , taille : %ld \n ID IS %s \n",packetHeader2,strlen(id),id);
@@ -158,6 +157,8 @@ char* generatePacket(struct packet p ){
     strcat(packetHeader2,ecn);
     printf("PACKET HEADER IS   : %s \n",packetHeader2);
     strcat(packetHeader2,fen);
+    printf("PACKET HEADER IS   : %s \n",packetHeader2);
+    strcat(packetHeader2,p.data);
     printf("PACKET HEADER IS   : %s \n",packetHeader2);
 
     free(fen);
@@ -346,7 +347,7 @@ struct sockaddr_in envoie){
                     p.seq=a+1;
                     p.type.SYN=0;
                     p.id=ID++;//id++               
-            printf("ETAPE3 : J'ai mit seq à %d et ack à %d\n",p.seq,p.acq);
+                    printf("ETAPE3 : J'ai mit seq à %d et ack à %d\n",p.seq,p.acq);
                     //envoyer le dernier paquet en confirmant avoir recu l'ack
                     char * packetToSend2 =generatePacket(p) ;
                     r=sendto(s,packetToSend2,DEFAULTSIZE,0,(struct sockaddr * )&envoie,size);
@@ -460,4 +461,5 @@ struct sockaddr_in envoie){
     return -1;
 }
 //////////////////////////////////END FUNCTION ///////////////////////////////////////////
+
 
