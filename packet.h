@@ -162,14 +162,19 @@ char* generatePacket(struct packet p ){
     printf("PACKET HEADER IS   : %s \n",packetHeader2);
     strcat(packetHeader2,p.data);
     printf("PACKET HEADER IS   : %s \n",packetHeader2);
+    
 
     free(fen);
     free(seq);
-    free(id);
-    free(ecn);
-    free(acq);
-    free(type);
+    /*
+    ces free font en sorte que le prog crash cote source je dois fixer ca
+    */
 
+    //free(id);
+    //free(ecn);
+    //free(acq);
+    //free(type);
+    
    
     return packetHeader2;
 } 
@@ -365,12 +370,14 @@ struct sockaddr_in envoie){
                 }
                 printf("connexion établie!\n");
                 ID=0;
-                exit(EXIT_SUCCESS);
+                free(packetToSend);
+                
+                return 1 ;
         }else{
             continue;
         }
     }
-    free(packetToSend);
+    
 
 }
 //////////////////////////////////END FUNCTION ///////////////////////////////////////////
@@ -507,10 +514,10 @@ struct sockaddr_in envoie){
             printf("ETAPE1 : J'ai recu un paquet son seq est à %d\n",p.seq);
             //Afficher le msg reçu :
             if(p.seq==numAck){
-            printf("Données reçues : %s\n",p.data);
-           // numSeq++%2;
-            numAck=(numAck+1)%2;
-            printf("je recoit un nouveau paquet et donc j'incremente ACK :%d \n",numAck);
+                printf("Données reçues : %s\n",p.data);
+                // numSeq++%2;
+                numAck=(numAck+1)%2;
+                printf("je recoit un nouveau paquet et donc j'incremente ACK :%d \n",numAck);
             }
             struct packet p2= init_packet();
             p2.acq=numAck;
@@ -527,7 +534,8 @@ struct sockaddr_in envoie){
         printf("Rien n'est recu\nNouvlelle tentative en cours../..\n");
         continue;
         }
-
+        free(p2.data);
+        free(p.data);
         free(buf);
         return;
     }

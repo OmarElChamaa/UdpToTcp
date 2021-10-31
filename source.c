@@ -2,9 +2,10 @@
 #include <unistd.h>
 int id = 0 ;
 
-void stopNwait(int s,struct sockaddr_in envoie,
-struct sockaddr_in ecoute,struct packet p){
-     
+void stopNwait(int s,struct sockaddr_in ecoute,
+struct sockaddr_in envoie){
+    
+    struct packet p=init_packet() ;
     int altern = 0 ; 
     p.seq=altern ;
     p.id=id ; 
@@ -42,16 +43,27 @@ struct sockaddr_in ecoute,struct packet p){
 
     char * packetToSend = generatePacket(p);
     
-
+    
     char * buffpacketToRecv = malloc(sizeof(char)*DEFAULTSIZE) ;
     memset(buffpacketToRecv,'\0',DEFAULTSIZE);
-
+    
     
     int x=0;
     socklen_t size=sizeof(ecoute);
    
 
     while(1){
+
+        x = sendto(s,packetToSend,DEFAULTSIZE+1,0,(struct sockaddr*)&envoie,
+        sizeof(envoie)); 
+
+        if(x==-1){
+            if(close(s)==-1){
+                raler("close");
+            }
+            raler("Sendto");
+        }
+        
         retval=select(FD_SETSIZE+1,&fd_monitor,NULL,NULL,&tv);
         switch (retval)
         {
@@ -135,6 +147,9 @@ int main (){
     
 
     int x =etablissementConnexionSource(s,ecoute,envoie);
+    if(x==1){
+        stopNwait(s,ecoute,envoie);
+    }
     printf("%d \n", x);
 
     return 0;
