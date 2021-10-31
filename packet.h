@@ -487,7 +487,9 @@ struct sockaddr_in envoie){
             tv.tv_usec = 0;
             retval = select(FD_SETSIZE+1, &fd_monitor, NULL, NULL, &tv);
             if(retval==-1){
-            close(s);
+                if(close(s)==-1){
+                raler("close");
+            }            
             raler("select etablissement\n");
             }
             if(FD_ISSET(s,&fd_monitor)){
