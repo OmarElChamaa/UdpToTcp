@@ -56,13 +56,15 @@ struct packet  init_packet(){
     struct packet p ; 
     p.acq=0;
     p.ecn=0;
-    p.fenetre=0;
+    p.fenetre=42;
     p.id=2;
     p.seq=0;
     p.type.ACK=0;
     p.type.FIN=0;
     p.type.RST=0;
     p.type.SYN=0;
+    p.data=malloc(sizeof(char)*p.fenetre);
+    memset(p.data, '\0',p.fenetre);
     return p;
 }
 //////////////////////////////////END OF FUNCTION//////////////////////////////////////////

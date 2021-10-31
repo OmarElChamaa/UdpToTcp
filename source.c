@@ -1,10 +1,14 @@
 #include "packet.h"
-
+#include <unistd.h>
+int id = 0 ;
 
 void stopNwait(int s,struct sockaddr_in envoie,
 struct sockaddr_in ecoute,struct packet p){
-    
-    
+     
+    int altern = 0 ; 
+    p.seq=altern ;
+    p.id=id ; 
+    p.fenetre=42;
 
     fd_set fd_monitor;
     struct timeval tv;
@@ -17,10 +21,24 @@ struct sockaddr_in ecoute,struct packet p){
     tv.tv_usec = 0;
 
     FILE *fp=fopen("test.txt","r");
+
+    if(fp==NULL){
+        if(close(s)==-1){
+            raler("close");
+        }
+        raler("fopen");
+    }
+
     fgets(p.data,p.fenetre, fp );
+    if( feof(fp) ) {
+        fclose(fp); 
+        //endConnexion ; 
+        free(p.data);
+        return ;
+    }
+
     fseek(fp, p.fenetre, SEEK_CUR);
     printf("donnees lu sont %s \n",p.data);
-    
 
     char * packetToSend = generatePacket(p);
     
@@ -28,17 +46,13 @@ struct sockaddr_in ecoute,struct packet p){
     char * buffpacketToRecv = malloc(sizeof(char)*DEFAULTSIZE) ;
     memset(buffpacketToRecv,'\0',DEFAULTSIZE);
 
-    int altern = 0 ; 
     
-    struct packet tmp = p ;
     int x=0;
     socklen_t size=sizeof(ecoute);
-    
-    
+   
 
     while(1){
         retval=select(FD_SETSIZE+1,&fd_monitor,NULL,NULL,&tv);
-
         switch (retval)
         {
         case -1 :
@@ -48,29 +62,46 @@ struct sockaddr_in ecoute,struct packet p){
             raler("select GO BACK \n");
             break;
         default :
-
             x = sendto(s,packetToSend,DEFAULTSIZE+1,0,(struct sockaddr*)&envoie,
             sizeof(envoie)); 
 
             if(x==-1){
-                close(s);
+                if(close(s)==-1){
+                    raler("close");
+                }
                 raler("Sendto");
             }
-
             if(FD_ISSET(s,&fd_monitor)){  
                 x=recvfrom(s,buffpacketToRecv,DEFAULTSIZE,0,
                 (struct sockaddr*)&ecoute,&size);
 
+                //test fin connexion->4 way handshake ;
+
                 if(x==-1){
-                    close(s);
-                    printf("recv from \n");
+                    if(close(s)==-1){
+                        raler("close");
+                    }
+                    raler("recv from \n");
                 }
                 p=generatePacketFromBuf(buffpacketToRecv);
-                if(p.seq!=tmp.seq || p.acq!= 0){
-                    // retransmettre le message
+                if(p.acq==altern){
+                    altern =(altern+1)%2;
+                    printf("Jai recu in je modif altern \n ");
+                    p.seq=altern ;
+                    id++;
+                    p.id=id ;
+
+                    
+                    fgets(p.data,p.fenetre, fp );
+                    if( feof(fp) ) {
+                        fclose(fp); 
+                        //endConnexion ; 
+                        free(p.data);
+                        return ;
+                    }
+                    fseek(fp, p.fenetre, SEEK_CUR);
+                    printf("donnees lu sont %s \n",p.data);
                     break;
-                }else{
-                    // on passe au prochain a transmettre 
                 }
                 
             }
@@ -79,11 +110,6 @@ struct sockaddr_in ecoute,struct packet p){
     }
 
 }
-
-
-
-
-
 
 
 
@@ -106,22 +132,10 @@ int main (){
     envoie.sin_family = AF_INET; 
     envoie.sin_port = htons(4444); 
     inet_pton(AF_INET,"127.0.0.1",&(envoie.sin_addr));
-
-    struct packet p = init_packet();
-
-
-    FILE *fp=fopen("test.txt","r");
-    fgets(p.data,p.fenetre, fp );
-    fseek(fp, p.fenetre, SEEK_CUR);
-    printf("donnees lu sont %s \n",p.data);
     
 
-    char * packetToSend = generatePacket(p);
-    
     int x =etablissementConnexionSource(s,ecoute,envoie);
     printf("%d \n", x);
 
-    
-    
     return 0;
 }
