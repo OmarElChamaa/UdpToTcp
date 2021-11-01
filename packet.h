@@ -290,7 +290,8 @@ struct packet  generatePacketFromBuf(char * buf){
     p.acq=convert_premiers_char(temp,16);
     p.ecn=convert_premiers_char(temp,8);
     p.fenetre=convert_premiers_char(temp,8);
-    //p->data=NULL;
+    //size_t size_data= strlen(temp);
+    p.data=temp;
     return p;
 } 
 ///////////////////////////////////END OF FUNCTION//////////////////////////////////////////
@@ -501,10 +502,10 @@ struct sockaddr_in envoie){
                 if(close(s)==-1){
                     raler("close");
                 }            
-                raler("select etablissement\n");
+                raler("select stop and wait server\n");
             }
             if(FD_ISSET(s,&fd_monitor)){
-                printf("data ready");//Je receve et je test et si tout va bien je renvois avec les nouvelles valeurs
+                printf("data ready\n");//Je receve et je test et si tout va bien je renvois avec les nouvelles valeurs
 
                 if((retour=recvfrom(s,buf,DEFAULTSIZE+1,0,(struct sockaddr*)&ecoute,&size))==-1){
                     raler("recvfrom");
@@ -513,7 +514,7 @@ struct sockaddr_in envoie){
                 char * inter_buf = buf;
                 //recuperer les données recues:
                 p=generatePacketFromBuf(inter_buf);
-                free(inter_buf);
+                //free(inter_buf);
                 printf("ETAPE1 : J'ai recu un paquet son seq est à %d\n",p.seq);
                 printf("Données reçues : %s\n",p.data);
                 //Afficher le msg reçu :
