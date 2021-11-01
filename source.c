@@ -108,12 +108,13 @@ struct sockaddr_in envoie){
                     if( feof(fp) ) {
                         fclose(fp); 
                         //endConnexion ; 
+                        printf("Plus de donnees a lire ;\n");
                         free(p.data);
                         return ;
                     }
                     fseek(fp, p.fenetre, SEEK_CUR);
                     printf("donnees lu sont %s \n",p.data);
-                    break;
+                    continue;
                 }
                 
             }

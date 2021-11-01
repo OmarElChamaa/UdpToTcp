@@ -478,6 +478,8 @@ struct sockaddr_in envoie){
     struct sockaddr_in envoie){
 
         int numAck=0,retour=0;
+        struct packet p=init_packet();
+        struct packet p2= init_packet();
 
         char*buf=malloc(sizeof(char)*DEFAULTSIZE);
         memset(buf,'\0',DEFAULTSIZE);
@@ -497,45 +499,49 @@ struct sockaddr_in envoie){
             retval = select(FD_SETSIZE+1, &fd_monitor, NULL, NULL, &tv);
             if(retval==-1){
                 if(close(s)==-1){
-                raler("close");
-            }            
-            raler("select etablissement\n");
+                    raler("close");
+                }            
+                raler("select etablissement\n");
             }
             if(FD_ISSET(s,&fd_monitor)){
-            printf("data ready");//Je receve et je test et si tout va bien je renvois avec les nouvelles valeurs
+                printf("data ready");//Je receve et je test et si tout va bien je renvois avec les nouvelles valeurs
 
-            if((retour=recvfrom(s,buf,DEFAULTSIZE+1,0,(struct sockaddr*)&ecoute,&size))==-1){
-                raler("recvfrom");
-            }
-            char * inter_buf = buf;
-            //recuperer les données recues:
-            struct packet p=generatePacketFromBuf(inter_buf);
-            free(inter_buf);
-            printf("ETAPE1 : J'ai recu un paquet son seq est à %d\n",p.seq);
-            //Afficher le msg reçu :
-            if(p.seq==numAck){
+                if((retour=recvfrom(s,buf,DEFAULTSIZE+1,0,(struct sockaddr*)&ecoute,&size))==-1){
+                    raler("recvfrom");
+                }
+
+                char * inter_buf = buf;
+                //recuperer les données recues:
+                p=generatePacketFromBuf(inter_buf);
+                free(inter_buf);
+                printf("ETAPE1 : J'ai recu un paquet son seq est à %d\n",p.seq);
                 printf("Données reçues : %s\n",p.data);
-                // numSeq++%2;
-                numAck=(numAck+1)%2;
-                printf("je recoit un nouveau paquet et donc j'incremente ACK :%d \n",numAck);
+                //Afficher le msg reçu :
+                if(p.seq==numAck){
+                    printf("Données reçues : %s\n",p.data);
+                    // numSeq++%2;
+                    numAck=(numAck+1)%2;
+                    printf("je recoit un nouveau paquet et donc j'incremente ACK :%d \n",numAck);
+                    free(p.data);
+                }
+
+                p2.acq=numAck;
+                char *inter2_buf= generatePacket(p2);
+
+                //envoie d'ACK
+                int sen=sendto(s,inter2_buf, DEFAULTSIZE,0,(struct sockaddr*)&envoie,size);
+                if(sen==-1){
+                    raler("sender \n");
+                }
+
+                printf("Etape 2: J'ai envoyé l'ack \n");
+                free(inter2_buf);
+                continue;
             }
-            struct packet p2= init_packet();
-            p2.acq=numAck;
-            char *inter2_buf= generatePacket(p2);
-            //envoie d'ACK
-            int sen=sendto(s,inter2_buf, DEFAULTSIZE,0,(struct sockaddr*)&envoie,size);
-            if(sen==-1){
-                raler("sender \n");
-            }
-            printf("Etape 2: J'ai envoyé l'ack \n");
-            free(inter2_buf);
+            printf("Rien n'est recu\nNouvlelle tentative en cours../..\n");
             continue;
         }
-        printf("Rien n'est recu\nNouvlelle tentative en cours../..\n");
-        continue;
-        }
-        free(p2.data);
-        free(p.data);
+        
         free(buf);
         return;
     }
