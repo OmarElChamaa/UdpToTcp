@@ -34,29 +34,19 @@ struct sockaddr_in envoie){
     if( feof(fp) ) {
         fclose(fp); 
         //endConnexion ; 
-        free(p.data);
+        //free(p.data);
         return ;
     }
 
     fseek(fp, p.fenetre, SEEK_CUR);
     printf("donnees lu sont %s \n",p.data);
 
-    char * packetToSend = generatePacket(p);
-    
-    
-    char * buffpacketToRecv = malloc(sizeof(char)*DEFAULTSIZE) ;
-    memset(buffpacketToRecv,'\0',DEFAULTSIZE);
-    
-    
     int x=0;
     socklen_t size=sizeof(ecoute);
-   
 
     while(1){
-
-        x = sendto(s,packetToSend,DEFAULTSIZE+1,0,(struct sockaddr*)&envoie,
+        x = sendto(s,&p,DEFAULTSIZE+1,0,(struct sockaddr*)&envoie,
         sizeof(envoie)); 
-
         if(x==-1){
             if(close(s)==-1){
                 raler("close");
@@ -74,7 +64,7 @@ struct sockaddr_in envoie){
             raler("select GO BACK \n");
             break;
         default :
-            x = sendto(s,packetToSend,DEFAULTSIZE+1,0,(struct sockaddr*)&envoie,
+            x = sendto(s,&p,DEFAULTSIZE+1,0,(struct sockaddr*)&envoie,
             sizeof(envoie)); 
 
             if(x==-1){
@@ -84,7 +74,7 @@ struct sockaddr_in envoie){
                 raler("Sendto");
             }
             if(FD_ISSET(s,&fd_monitor)){  
-                x=recvfrom(s,buffpacketToRecv,DEFAULTSIZE,0,
+                x=recvfrom(s,&p,DEFAULTSIZE,0,
                 (struct sockaddr*)&ecoute,&size);
 
                 //test fin connexion->4 way handshake ;
@@ -95,21 +85,18 @@ struct sockaddr_in envoie){
                     }
                     raler("recv from \n");
                 }
-                p=generatePacketFromBuf(buffpacketToRecv);
                 if(p.acq==altern){
                     altern =(altern+1)%2;
                     printf("Jai recu in je modif altern \n ");
                     p.seq=altern ;
                     id++;
                     p.id=id ;
-
-                    
                     fgets(p.data,p.fenetre, fp );
                     if( feof(fp) ) {
                         fclose(fp); 
                         //endConnexion ; 
                         printf("Plus de donnees a lire ;\n");
-                        free(p.data);
+                       //free(p.data);
                         return ;
                     }
                     fseek(fp, p.fenetre, SEEK_CUR);
