@@ -19,7 +19,10 @@
 #include <string.h>
 
 #define DEFAULTSIZE 416
-int ID=0;
+#define ACQ 16
+
+
+char ID=0;
 
 
 ////////////////////FCT generation d'un int aleatoir///////////////////////////////////////
@@ -31,40 +34,30 @@ int generateRandInt(int max){
 ///////////////////////////////////END OF FUNCTION//////////////////////////////////////////
 
 
-typedef struct Type
-{
-    int ACK ; 
-    int RST ;
-    int FIN ; 
-    int SYN ; 
-  
-}Type;
+// typedef struct Type
+// {
+//     int ACK ; 
+//     int RST ;
+//     int FIN ; 
+//     int SYN ; 
+                                                                                                                                                                                                                            
+// }Type;
 
 typedef struct packet
 {
-    int id ; 
-    struct Type type  ; 
-    int seq ;
-    int acq  ; 
-    int ecn ;
-    int fenetre  ; 
-    char * data; 
+    char id ; 
+    char type ;
+    short seq  ;
+    short acq  ; 
+    char ecn ;
+    char fenetre  ;// a revoir 
+    char data[42] ;  
 }packet;
 
 /////////////////////FCT inititialisation d'un paquet//////////////////////////////////////
 struct packet  init_packet(){
     struct packet p ; 
-    p.acq=0;
-    p.ecn=0;
-    p.fenetre=42;
-    p.id=2;
-    p.seq=0;
-    p.type.ACK=0;
-    p.type.FIN=0;
-    p.type.RST=0;
-    p.type.SYN=0;
-    p.data=malloc(sizeof(char)*p.fenetre);
-    memset(p.data, '\0',p.fenetre);
+    //memset(p.data, '\0',p.fenetre);
     return p;
 }
 //////////////////////////////////END OF FUNCTION//////////////////////////////////////////
@@ -304,21 +297,15 @@ int etablissementConnexionSource(int s,struct sockaddr_in ecoute,
 struct sockaddr_in envoie){
 
     int a = generateRandInt(100);
-    char buff [DEFAULTSIZE] ;
+    void * buff;
 
     struct packet p=init_packet() ;
     socklen_t size=sizeof(envoie);
-
-    // p.id=id++ ;
-    // p.type.SYN=1;
-    // p.acq = 16 ; 
-    // p.seq=a;
-    p.id=ID++ ;
-    p.type.SYN=1;
-    p.seq=a;
     printf("ETAPE1 : J'ai mit seq à %d et ack à %d\n",p.seq,p.acq);
 
-    char * packetToSend =generatePacket(p) ;
+    p.type=20;
+    p.id=0;
+    p.seq=a;
 
     fd_set fd_monitor;
     struct timeval tv;
@@ -327,12 +314,10 @@ struct sockaddr_in envoie){
     FD_ZERO(&fd_monitor);
     FD_SET(s, &fd_monitor);
 
-   
-
     while(1){
         tv.tv_sec = 10;
         tv.tv_usec = 0;
-        sendto(s,packetToSend,DEFAULTSIZE,0,(struct sockaddr*)&envoie,size);
+        sendto(s,&p,DEFAULTSIZE,0,(struct sockaddr*)&ecoute,sizeof(struct sockaddr));
 
         retval = select(FD_SETSIZE+1, &fd_monitor, NULL, NULL, &tv);
             if(retval==-1){
@@ -342,23 +327,21 @@ struct sockaddr_in envoie){
         if(FD_ISSET(s,&fd_monitor)){
                 printf("data ready\n");//Je receive et je test et si tout va bien je renvois avec les nouvelles valeurs
                 //recevfrom
-                int r =recvfrom(s,buff,DEFAULTSIZE+1,0,(struct sockaddr*)&ecoute,&size);
+                int r =recvfrom(s,p,DEFAULTSIZE,0,(struct sockaddr*)&ecoute,sizeof(struct packet));
                 if(r==-1){
                     raler("recvfrom 1\n");
                 }
                 //deroulement de test
-                p=generatePacketFromBuf(buff);//on genere le paquet du buf recu
                 printf("ETAPE2 : J'ai recu seq à %d et ack à %d\n",p.seq,p.acq);
 
                 if(p.acq==a+1){
                     p.acq=p.seq+1;//ack = b+1
                     p.seq=a+1;
-                    p.type.SYN=0;
+                    p.type=0;
                     p.id=ID++;//id++               
                     printf("ETAPE3 : J'ai mit seq à %d et ack à %d\n",p.seq,p.acq);
                     //envoyer le dernier paquet en confirmant avoir recu l'ack
-                    char * packetToSend2 =generatePacket(p) ;
-                    r=sendto(s,packetToSend2,DEFAULTSIZE,0,(struct sockaddr * )&envoie,size);
+                    r=sendto(s,&p,DEFAULTSIZE,0,(struct sockaddr * )&envoie,sizeof(p));
                     if(r==-1){
                         raler("send paquet");
                     }
