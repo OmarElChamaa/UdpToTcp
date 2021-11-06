@@ -20,6 +20,7 @@
 
 #define DEFAULTSIZE 416
 #define ACQ 16
+#define TAILLEFEN 42
 
 
 char ID=0;
@@ -253,9 +254,10 @@ struct sockaddr_in envoie){
     void stopNwaitServer (int s,struct sockaddr_in ecoute,
     struct sockaddr_in envoie){
 
+
+        char *fn = "testColle.txt";
         int numAck=0,retour=0;
         struct packet p=init_packet();
-        struct packet p2= init_packet();
 
         fd_set fd_monitor;
         struct timeval tv;
@@ -265,6 +267,11 @@ struct sockaddr_in envoie){
         FD_SET(s, &fd_monitor);
         socklen_t size=sizeof(ecoute);
 
+        FILE *fp = fopen(fn, "w");
+        if (fp == NULL)
+        {
+            raler("Fopen server");
+        }
   
         while(1){
             tv.tv_sec = 4;
@@ -291,23 +298,25 @@ struct sockaddr_in envoie){
                     printf("Données reçues : %s\n",p.data);
                     numAck=(numAck+1)%2;
                     printf("je recoit un nouveau paquet et donc j'incremente ACK :%d \n",numAck);
-                    //free(p.data);
+                    fprintf(fp,"%s",p.data);
                 }
+                
 
-                p2.acq=numAck;
+                p.acq=numAck;
 
                 //envoie d'ACK
-                int sen=sendto(s,&p2, DEFAULTSIZE,0,(struct sockaddr*)&envoie,size);
+                int sen=sendto(s,&p, DEFAULTSIZE,0,(struct sockaddr*)&envoie,size);
                 if(sen==-1){
                     raler("sender \n");
                 }
 
-                printf("Etape 2: J'ai envoyé l'ack \n");
+                printf("Etape 2: J'ai envoyé l'ack %d \n",p.acq);
                 continue;
             }
             printf("Rien n'est recu\nNouvlelle tentative en cours../..\n");
             continue;
-        }        
+        }  
+        fclose(fp);      
         return;
     }
     //////////////////////////////////END FUNCTION ///////////////////////////////////////////

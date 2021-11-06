@@ -1,5 +1,6 @@
 #include "packet.h"
 #include <unistd.h>
+
 int id = 0 ;
 
 void stopNwait(int s,struct sockaddr_in ecoute,
@@ -30,7 +31,7 @@ struct sockaddr_in envoie){
         raler("fopen");
     }
 
-    fgets(p.data,p.fenetre, fp );
+    fgets(p.data,TAILLEFEN, fp );
     if( feof(fp) ) {
         fclose(fp); 
         //endConnexion ; 
@@ -38,7 +39,7 @@ struct sockaddr_in envoie){
         return ;
     }
 
-    fseek(fp, p.fenetre, SEEK_CUR);
+    fseek(fp, TAILLEFEN, SEEK_CUR);
     printf("donnees lu sont %s \n",p.data);
 
     int x=0;
@@ -85,13 +86,13 @@ struct sockaddr_in envoie){
                     }
                     raler("recv from \n");
                 }
-                if(p.acq==altern){
+                if(p.acq==(altern+1)%2){
                     altern =(altern+1)%2;
                     printf("Jai recu in je modif altern \n ");
                     p.seq=altern ;
                     id++;
                     p.id=id ;
-                    fgets(p.data,p.fenetre, fp );
+                    fgets(p.data,TAILLEFEN, fp );
                     if( feof(fp) ) {
                         fclose(fp); 
                         //endConnexion ; 
@@ -99,7 +100,7 @@ struct sockaddr_in envoie){
                        //free(p.data);
                         return ;
                     }
-                    fseek(fp, p.fenetre, SEEK_CUR);
+                    fseek(fp, TAILLEFEN, SEEK_CUR);
                     printf("donnees lu sont %s \n",p.data);
                     continue;
                 }
