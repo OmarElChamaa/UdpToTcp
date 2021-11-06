@@ -18,7 +18,7 @@
 #include <arpa/inet.h>
 #include <string.h>
 
-#define DEFAULTSIZE 416
+#define DEFAULTSIZE 42
 #define ACQ 16
 #define TAILLEFEN 42
 
@@ -92,6 +92,88 @@ return desc;
 
 
 
+
+
+
+
+
+
+
+
+
+
+//////////////////////FCT fermeture source/////////////////////////////////////////////
+int fermeture_connection_source(int s,struct sockaddr_in ecoute,
+struct sockaddr_in envoie)
+{
+    socklen_t size=sizeof(ecoute);
+    struct packet p = init_packet();
+    p.type=2; 
+
+    
+
+
+    fd_set fd_monitor;
+    struct timeval tv;
+    int retval;
+
+    FD_ZERO(&fd_monitor);
+    FD_SET(s, &fd_monitor);
+
+    while(1){
+        tv.tv_sec = 10;
+        tv.tv_usec = 0;
+
+        
+
+        retval = select(FD_SETSIZE+1, &fd_monitor, NULL, NULL, &tv);
+        if(retval==-1){
+            printf("select etablissement\n");
+        }
+
+        int  sen = sendto(s,&p,DEFAULTSIZE,0,(struct sockaddr*)&envoie,sizeof(struct sockaddr));
+        if(sen==-1){
+            raler("send etablisemment \n ");
+        }
+
+
+        if(FD_ISSET(s,&fd_monitor)){
+            int r =recvfrom(s,&p,DEFAULTSIZE,0,(struct sockaddr*)&ecoute,&size);
+            if(r==-1){
+                raler("recvfrom 1\n");
+            }
+            if(p.type == 16){
+                printf("Premier acquittement recu \n");
+                r =recvfrom(s,&p,DEFAULTSIZE,0,(struct sockaddr*)&ecoute,&size);
+                if(r==-1){
+                    raler("recvfrom 1\n");
+                }
+                if(p.type == 1){
+                    printf("jai recu mon message de fin, jenvoie mon acq \n");
+                    sen = sendto(s,&p,DEFAULTSIZE,0,(struct sockaddr*)&envoie,sizeof(struct sockaddr));
+                    if(sen==-1){
+                        raler("send etablisemment \n ");
+                    }
+                    printf("je ferme ma connexion \n");
+                    if(close(s)==-1){
+                        raler("close");
+                    }  
+                    exit(1);
+                }
+
+            }
+            
+        }else{
+            continue;
+        }
+    }
+    exit(-1);
+
+} 
+///////////////////////////////////END //////////////////////////////////////
+
+
+
 //////////////////////////////FCT ETABLISSEMENT DE CONNEXION COTÉ SOURCE /////////////////
 
 
@@ -117,16 +199,15 @@ struct sockaddr_in envoie){
     while(1){
         tv.tv_sec = 10;
         tv.tv_usec = 0;
-        int  sen = sendto(s,&p,DEFAULTSIZE,0,(struct sockaddr*)&envoie,sizeof(struct sockaddr));
-        if(sen==-1){
-            raler("send etablisemment \n ");
-        }
-
-
+        
         retval = select(FD_SETSIZE+1, &fd_monitor, NULL, NULL, &tv);
             if(retval==-1){
                 printf("select etablissement\n");
             }
+        int  sen = sendto(s,&p,DEFAULTSIZE,0,(struct sockaddr*)&envoie,sizeof(struct sockaddr));
+        if(sen==-1){
+            raler("send etablisemment \n ");
+        }
 
         if(FD_ISSET(s,&fd_monitor)){
                 printf("data ready\n");//Je receive et je test et si tout va bien je renvois avec les nouvelles valeurs
@@ -295,10 +376,10 @@ struct sockaddr_in envoie){
                 printf("Données reçues : %s\n",p.data);
                 //Afficher le msg reçu :
                 if(p.seq==numAck){
+                    fprintf(fp,"%s",p.data);
                     printf("Données reçues : %s\n",p.data);
                     numAck=(numAck+1)%2;
                     printf("je recoit un nouveau paquet et donc j'incremente ACK :%d \n",numAck);
-                    fprintf(fp,"%s",p.data);
                 }
                 
 
