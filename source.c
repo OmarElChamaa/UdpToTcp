@@ -97,6 +97,7 @@ struct sockaddr_in envoie){
                         fclose(fp); 
                         //endConnexion ; 
                         printf("Plus de donnees a lire ;\n");
+                        fermeture_connection_source(s,ecoute,envoie);
                        //free(p.data);
                         return ;
                     }

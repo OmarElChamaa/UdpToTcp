@@ -92,7 +92,63 @@ return desc;
 
 
 
+int fermeture_connection_serveur(int s,struct sockaddr_in ecoute,
+struct sockaddr_in envoie)
+{
+    socklen_t size=sizeof(ecoute);
+    struct packet p = init_packet();
+    p.type = 16 ; 
 
+    fd_set fd_monitor;
+    struct timeval tv;
+    int retval;
+
+    FD_ZERO(&fd_monitor);
+    FD_SET(s, &fd_monitor);
+    while(1){
+        tv.tv_sec = 10;
+        tv.tv_usec = 0;
+
+        int  sen = sendto(s,&p,DEFAULTSIZE,0,(struct sockaddr*)&envoie,sizeof(struct sockaddr));
+        if(sen==-1){
+            raler("send etablisemment \n ");
+        }
+
+        if(FD_ISSET(s,&fd_monitor)){
+
+            retval = select(FD_SETSIZE+1, &fd_monitor, NULL, NULL, &tv);
+            if(retval==-1){
+                printf("select fermeture\n");
+            }
+
+            p.type = 1 ;
+            int  sen = sendto(s,&p,DEFAULTSIZE,0,(struct sockaddr*)&envoie,sizeof(struct sockaddr));
+            if(sen==-1){
+                raler("send etablisemment \n ");
+            }
+
+            if(FD_ISSET(s,&fd_monitor)){
+                int r =recvfrom(s,&p,DEFAULTSIZE,0,(struct sockaddr*)&ecoute,&size);
+                if(r==-1){
+                    raler("recvfrom 1\n");
+                }
+                if(p.type == 16){
+                    printf("ACQ bien recu \n");
+                    if(close(s)==-1){
+                        raler("close");
+                    }
+                    exit(1);  
+                }
+            }
+
+
+
+        }else{
+            continue;
+        }
+    }
+
+}
 
 
 
@@ -197,18 +253,18 @@ struct sockaddr_in envoie){
     FD_SET(s, &fd_monitor);
 
     while(1){
-        tv.tv_sec = 10;
+        tv.tv_sec = 2;
         tv.tv_usec = 0;
         
-        retval = select(FD_SETSIZE+1, &fd_monitor, NULL, NULL, &tv);
-            if(retval==-1){
-                printf("select etablissement\n");
-            }
         int  sen = sendto(s,&p,DEFAULTSIZE,0,(struct sockaddr*)&envoie,sizeof(struct sockaddr));
         if(sen==-1){
             raler("send etablisemment \n ");
         }
 
+        retval = select(FD_SETSIZE+1, &fd_monitor, NULL, NULL, &tv);
+        if(retval==-1){
+            printf("select etablissement\n");
+        }
         if(FD_ISSET(s,&fd_monitor)){
                 printf("data ready\n");//Je receive et je test et si tout va bien je renvois avec les nouvelles valeurs
                 //recevfrom
@@ -369,6 +425,12 @@ struct sockaddr_in envoie){
 
                 if((retour=recvfrom(s,&p,DEFAULTSIZE+1,0,(struct sockaddr*)&ecoute,&size))==-1){
                     raler("recvfrom");
+                }
+
+                //test fin 
+
+                if(p.type == 1){
+                    fermeture_connection_serveur(s,ecoute,envoie);
                 }
 
                 //recuperer les données recues:
