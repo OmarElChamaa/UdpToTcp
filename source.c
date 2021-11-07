@@ -3,7 +3,7 @@
 
 int id = 0 ;
 
-void stopNwait(int s,struct sockaddr_in ecoute,
+int stopNwait(int s,struct sockaddr_in ecoute,
 struct sockaddr_in envoie){
     
     struct packet p=init_packet() ;
@@ -34,9 +34,6 @@ struct sockaddr_in envoie){
     fgets(p.data,TAILLEFEN, fp );
     if( feof(fp) ) {
         fclose(fp); 
-        //endConnexion ; 
-        //free(p.data);
-        return ;
     }
 
     fseek(fp, TAILLEFEN, SEEK_CUR);
@@ -97,9 +94,7 @@ struct sockaddr_in envoie){
                         fclose(fp); 
                         //endConnexion ; 
                         printf("Plus de donnees a lire ;\n");
-                        fermeture_connection_source(s,ecoute,envoie);
-                       //free(p.data);
-                        return ;
+                        return fermeture_connection_source(s,ecoute,envoie);
                     }
                     fseek(fp, TAILLEFEN, SEEK_CUR);
                     printf("donnees lu sont %s \n",p.data);
@@ -117,7 +112,6 @@ struct sockaddr_in envoie){
 
 
 int main (){
-
     int s=0;
     struct sockaddr_in ecoute;
     struct sockaddr_in envoie;

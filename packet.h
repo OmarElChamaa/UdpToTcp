@@ -181,16 +181,21 @@ struct sockaddr_in envoie)
         tv.tv_usec = 0;
 
         
+        int  sen = sendto(s,&p,DEFAULTSIZE,0,(struct sockaddr*)&envoie,sizeof(struct sockaddr));
+        if(sen==-1){
+            raler("send etablisemment \n ");
+        }
 
         retval = select(FD_SETSIZE+1, &fd_monitor, NULL, NULL, &tv);
         if(retval==-1){
             printf("select etablissement\n");
         }
-
-        int  sen = sendto(s,&p,DEFAULTSIZE,0,(struct sockaddr*)&envoie,sizeof(struct sockaddr));
+        sen = sendto(s,&p,DEFAULTSIZE,0,(struct sockaddr*)&envoie,sizeof(struct sockaddr));
         if(sen==-1){
             raler("send etablisemment \n ");
         }
+
+        
 
 
         if(FD_ISSET(s,&fd_monitor)){
@@ -204,7 +209,7 @@ struct sockaddr_in envoie)
                 if(r==-1){
                     raler("recvfrom 1\n");
                 }
-                if(p.type == 1){
+                if(p.type == 2){
                     printf("jai recu mon message de fin, jenvoie mon acq \n");
                     sen = sendto(s,&p,DEFAULTSIZE,0,(struct sockaddr*)&envoie,sizeof(struct sockaddr));
                     if(sen==-1){
@@ -240,7 +245,7 @@ struct sockaddr_in envoie){
     struct packet p=init_packet() ;
     socklen_t size=sizeof(ecoute);
 
-    p.type=1;
+    
     p.id=0;
     p.seq=a;
     printf("ETAPE1 : J'ai mit seq à %d et ack à %d\n",p.seq,p.acq);
@@ -265,6 +270,12 @@ struct sockaddr_in envoie){
         if(retval==-1){
             printf("select etablissement\n");
         }
+
+        // sen = sendto(s,&p,DEFAULTSIZE,0,(struct sockaddr*)&envoie,sizeof(struct sockaddr));
+        // if(sen==-1){
+        //     raler("send etablisemment \n ");
+        // }
+
         if(FD_ISSET(s,&fd_monitor)){
                 printf("data ready\n");//Je receive et je test et si tout va bien je renvois avec les nouvelles valeurs
                 //recevfrom
@@ -388,78 +399,79 @@ struct sockaddr_in envoie){
 
 //////////////////////////////////FCT STOP AND WAIT COTÉ SERVEUR /////////////////////////
 
-    void stopNwaitServer (int s,struct sockaddr_in ecoute,
+int stopNwaitServer (int s,struct sockaddr_in ecoute,
     struct sockaddr_in envoie){
 
 
-        char *fn = "testColle.txt";
-        int numAck=0,retour=0;
-        struct packet p=init_packet();
+    char *fn = "testColle.txt";
+    int numAck=0,retour=0;
+    struct packet p=init_packet();
 
-        fd_set fd_monitor;
-        struct timeval tv;
-        int retval;
+    fd_set fd_monitor;
+    struct timeval tv;
+    int retval;
 
-        FD_ZERO(&fd_monitor);
-        FD_SET(s, &fd_monitor);
-        socklen_t size=sizeof(ecoute);
+    FD_ZERO(&fd_monitor);
+    FD_SET(s, &fd_monitor);
+    socklen_t size=sizeof(ecoute);
 
-        FILE *fp = fopen(fn, "w");
-        if (fp == NULL)
-        {
-            raler("Fopen server");
-        }
-  
-        while(1){
-            tv.tv_sec = 4;
-            tv.tv_usec = 0;
-            retval = select(FD_SETSIZE+1, &fd_monitor, NULL, NULL, &tv);
-            if(retval==-1){
-                if(close(s)==-1){
-                    raler("close");
-                }            
-                raler("select stop and wait server\n");
-            }
-            if(FD_ISSET(s,&fd_monitor)){
-                printf("data ready\n");//Je receve et je test et si tout va bien je renvois avec les nouvelles valeurs
-
-                if((retour=recvfrom(s,&p,DEFAULTSIZE+1,0,(struct sockaddr*)&ecoute,&size))==-1){
-                    raler("recvfrom");
-                }
-
-                //test fin 
-
-                if(p.type == 1){
-                    fermeture_connection_serveur(s,ecoute,envoie);
-                }
-
-                //recuperer les données recues:
-                printf("ETAPE1 : J'ai recu un paquet son seq est à %d\n",p.seq);
-                printf("Données reçues : %s\n",p.data);
-                //Afficher le msg reçu :
-                if(p.seq==numAck){
-                    fprintf(fp,"%s",p.data);
-                    printf("Données reçues : %s\n",p.data);
-                    numAck=(numAck+1)%2;
-                    printf("je recoit un nouveau paquet et donc j'incremente ACK :%d \n",numAck);
-                }
-                
-
-                p.acq=numAck;
-
-                //envoie d'ACK
-                int sen=sendto(s,&p, DEFAULTSIZE,0,(struct sockaddr*)&envoie,size);
-                if(sen==-1){
-                    raler("sender \n");
-                }
-
-                printf("Etape 2: J'ai envoyé l'ack %d \n",p.acq);
-                continue;
-            }
-            printf("Rien n'est recu\nNouvlelle tentative en cours../..\n");
-            continue;
-        }  
-        fclose(fp);      
-        return;
+    FILE *fp = fopen(fn, "w");
+    
+    if (fp == NULL)
+    {
+        raler("Fopen server");
     }
+
+    while(1){
+        tv.tv_sec = 4;
+        tv.tv_usec = 0;
+        retval = select(FD_SETSIZE+1, &fd_monitor, NULL, NULL, &tv);
+        if(retval==-1){
+            if(close(s)==-1){
+                raler("close");
+            }            
+            raler("select stop and wait server\n");
+        }
+        if(FD_ISSET(s,&fd_monitor)){
+            printf("data ready\n");//Je receve et je test et si tout va bien je renvois avec les nouvelles valeurs
+
+            if((retour=recvfrom(s,&p,DEFAULTSIZE+1,0,(struct sockaddr*)&ecoute,&size))==-1){
+                raler("recvfrom");
+            } 
+
+                // fermeture connection avec FIN 
+            if(p.type==2){
+                printf("Jai recu mon message de fin \n");
+                fclose(fp); 
+                return fermeture_connection_serveur(s,ecoute,envoie);
+            }
+
+            //recuperer les données recues:
+            printf("ETAPE1 : J'ai recu un paquet son seq est à %d\n",p.seq);
+            printf("Données reçues : %s\n",p.data);
+            //Afficher le msg reçu :
+            if(p.seq==numAck){
+                fprintf(fp,"%s",p.data);
+                printf("Données reçues : %s\n",p.data);
+                numAck=(numAck+1)%2;
+                printf("je recoit un nouveau paquet et donc j'incremente ACK :%d \n",numAck);
+            }
+            
+
+            p.acq=numAck;
+
+            //envoie d'ACK
+            int sen=sendto(s,&p, DEFAULTSIZE,0,(struct sockaddr*)&envoie,size);
+            if(sen==-1){
+                raler("sender \n");
+            }
+
+            printf("Etape 2: J'ai envoyé l'ack %d \n",p.acq);
+            continue;
+        }
+        printf("Rien n'est recu\nNouvlelle tentative en cours../..\n");
+        continue;
+    }      
+    return 1;
+}
     //////////////////////////////////END FUNCTION ///////////////////////////////////////////
