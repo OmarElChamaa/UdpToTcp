@@ -260,11 +260,6 @@ struct sockaddr_in envoie){
             printf("select etablissement\n");
         }
 
-        // sen = sendto(s,&p,DEFAULTSIZE,0,(struct sockaddr*)&envoie,sizeof(struct sockaddr));
-        // if(sen==-1){
-        //     raler("send etablisemment \n ");
-        // }
-
         if(FD_ISSET(s,&fd_monitor)){
                 printf("data ready\n");//Je receive et je test et si tout va bien je renvois avec les nouvelles valeurs
                 //recevfrom
@@ -293,7 +288,7 @@ struct sockaddr_in envoie){
                     exit(EXIT_FAILURE);
                 }
                 printf("connexion établie!\n");
-                ID=0;              
+               // ID=0;              
                 return 1 ;
         }else{
             continue;
@@ -363,12 +358,11 @@ struct sockaddr_in envoie){
             printf("ETAPE3: RECU seq = %d et l'ack =%d\n",p.seq,p.acq);
             if(p.acq==b+1){
                 printf("connexion établie :)\n");
-                return 1;
                 ID=0;              
-
+                return 1;
             }
             else{
-                ID=0;              
+                //ID=0;              
                 return-1;
             }
         }
@@ -377,7 +371,7 @@ struct sockaddr_in envoie){
             continue;
         }
     }
-    ID=0;              
+    //ID=0;              
     return -1;
 }
 //////////////////////////////////END FUNCTION ///////////////////////////////////////////
