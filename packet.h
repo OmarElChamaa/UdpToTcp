@@ -114,14 +114,13 @@ struct sockaddr_in envoie)
             raler("send etablisemment \n ");
         }
 
-        if(FD_ISSET(s,&fd_monitor)){
-
-            retval = select(FD_SETSIZE+1, &fd_monitor, NULL, NULL, &tv);
+        retval = select(FD_SETSIZE+1, &fd_monitor, NULL, NULL, &tv);
             if(retval==-1){
                 printf("select fermeture\n");
             }
 
-            p.type = 1 ;
+        if(FD_ISSET(s,&fd_monitor)){
+            p.type = 2 ;
             int  sen = sendto(s,&p,DEFAULTSIZE,0,(struct sockaddr*)&envoie,sizeof(struct sockaddr));
             if(sen==-1){
                 raler("send etablisemment \n ");
@@ -190,13 +189,6 @@ struct sockaddr_in envoie)
         if(retval==-1){
             printf("select etablissement\n");
         }
-        sen = sendto(s,&p,DEFAULTSIZE,0,(struct sockaddr*)&envoie,sizeof(struct sockaddr));
-        if(sen==-1){
-            raler("send etablisemment \n ");
-        }
-
-        
-
 
         if(FD_ISSET(s,&fd_monitor)){
             int r =recvfrom(s,&p,DEFAULTSIZE,0,(struct sockaddr*)&ecoute,&size);
@@ -205,23 +197,20 @@ struct sockaddr_in envoie)
             }
             if(p.type == 16){
                 printf("Premier acquittement recu \n");
-                r =recvfrom(s,&p,DEFAULTSIZE,0,(struct sockaddr*)&ecoute,&size);
-                if(r==-1){
-                    raler("recvfrom 1\n");
-                }
-                if(p.type == 2){
-                    printf("jai recu mon message de fin, jenvoie mon acq \n");
-                    sen = sendto(s,&p,DEFAULTSIZE,0,(struct sockaddr*)&envoie,sizeof(struct sockaddr));
-                    if(sen==-1){
-                        raler("send etablisemment \n ");
-                    }
-                    printf("je ferme ma connexion \n");
-                    if(close(s)==-1){
-                        raler("close");
-                    }  
-                    exit(1);
-                }
+            }
+            if(p.type == 2){
 
+                printf("jai recu mon message de fin, jenvoie mon acq \n");
+                p.type = 16 ; 
+                sen = sendto(s,&p,DEFAULTSIZE,0,(struct sockaddr*)&envoie,sizeof(struct sockaddr));
+                if(sen==-1){
+                    raler("send etablisemment \n ");
+                }
+                printf("je ferme ma connexion \n");
+                if(close(s)==-1){
+                    raler("close");
+                }  
+                exit(1);
             }
             
         }else{
