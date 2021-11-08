@@ -83,7 +83,8 @@ struct sockaddr_in envoie){
                     }
                     raler("recv from \n");
                 }
-                if(p.acq==(altern+1)%2){
+                //tester si p.type == 16 
+                if(p.acq==(altern+1)%2 ){
                     altern =(altern+1)%2;
                     printf("Jai recu in je modif altern \n ");
                     p.seq=altern ;
@@ -100,6 +101,10 @@ struct sockaddr_in envoie){
                     printf("donnees lu sont %s \n",p.data);
                     continue;
                 }
+
+                //else if
+                //si je recoi syn + acq 
+                //je renvoie acq
                 
             }
             

@@ -230,6 +230,7 @@ struct sockaddr_in envoie)
 int etablissementConnexionSource(int s,struct sockaddr_in ecoute,
 struct sockaddr_in envoie){
 
+    //unisgned short
     int a = generateRandInt(100);
     struct packet p=init_packet() ;
     socklen_t size=sizeof(ecoute);
