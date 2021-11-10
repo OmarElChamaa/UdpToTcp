@@ -18,6 +18,7 @@ struct sockaddr_in envoie){
     int altern = 0 ; 
     p.seq=altern ;
     p.id=id ; 
+    p.type+=4;
     p.fenetre=42;
 
     fd_set fd_monitor;

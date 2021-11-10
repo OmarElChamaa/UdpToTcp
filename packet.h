@@ -273,6 +273,7 @@ struct sockaddr_in envoie){
     
     p.id=0;
     p.seq=a;
+    p.type+=1;
     printf("ETAPE1 : J'ai mit seq à %d et ack à %d\n",p.seq,p.acq);
 
     fd_set fd_monitor;
