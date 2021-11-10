@@ -3,6 +3,14 @@
 
 int id = 0 ;
 
+/**
+    @brief Fonction implementant la procedure stop n wait du cote source  
+    @param socket
+    @param sockaddr_in ecoute
+    @param sockaddr_in envoie
+    @return int 
+*/
+
 int stopNwait(int s,struct sockaddr_in ecoute,
 struct sockaddr_in envoie){
     
@@ -75,7 +83,9 @@ struct sockaddr_in envoie){
                 x=recvfrom(s,&p,DEFAULTSIZE,0,
                 (struct sockaddr*)&ecoute,&size);
 
-                //test fin connexion->4 way handshake ;
+                if(p.type==2){
+                    fermeture_connection_source(s,ecoute,envoie);
+                }
 
                 if(x==-1){
                     if(close(s)==-1){
@@ -83,7 +93,8 @@ struct sockaddr_in envoie){
                     }
                     raler("recv from \n");
                 }
-                if(p.acq==(altern+1)%2){
+                //tester si p.type == 16 
+                if(p.acq==(altern+1)%2 ){
                     altern =(altern+1)%2;
                     printf("Jai recu in je modif altern \n ");
                     p.seq=altern ;
@@ -100,6 +111,10 @@ struct sockaddr_in envoie){
                     printf("donnees lu sont %s \n",p.data);
                     continue;
                 }
+
+                //else if
+                //si je recoi syn + acq 
+                //je renvoie acq
                 
             }
             

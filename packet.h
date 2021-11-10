@@ -26,14 +26,22 @@
 char ID=0;
 
 
-////////////////////FCT generation d'un int aleatoir///////////////////////////////////////
+/**
+ * @brief genere un int aleatoire entre 0 et max 
+ * 
+ * @param max 
+ * @return int 
+ */
 int generateRandInt(int max){
     srand(time(NULL));
     int r = rand() % max;
     return r;
 } 
-///////////////////////////////////END OF FUNCTION//////////////////////////////////////////
 
+/**
+ * @brief structure du message ou packet 
+ * @struct packet 
+ */
 typedef struct packet
 {
     char id ; 
@@ -41,11 +49,15 @@ typedef struct packet
     short seq  ;
     short acq  ; 
     char ecn ;
-    char fenetre  ;// a revoir 
+    char fenetre  ;
     char data[42] ;  
 }packet;
 
-/////////////////////FCT inititialisation d'un paquet//////////////////////////////////////
+/**
+ * @brief initiale les champs du packet 
+ * 
+ * @return struct packet 
+ */
 struct packet  init_packet(){
     struct packet p ; 
     p.id = 0 ;
@@ -57,41 +69,57 @@ struct packet  init_packet(){
     memset(p.data,'\0',42);
     return p;
 }
-//////////////////////////////////END OF FUNCTION//////////////////////////////////////////
 
-
-/////////////////////////FCT raler/////////////////////////////////////////////////////////
+/**
+ * @brief Renvoie la cause de l'erreur + exit a 1 
+ * 
+ * @param message 
+ */
 void raler(char *message) 
 {
 	perror(message);
-	exit(EXIT_FAILURE); //dans le cas d'un probleme -> retour 1 comme demandé
+	exit(EXIT_FAILURE); 
 }
-///////////////////////////////////END OF FUNCTION//////////////////////////////////////////
 
 
-
-//////////////////////FCT calculer la puissance/////////////////////////////////////////////
-int puissance ( int a, int b ){//calculer a^b
+/**
+ * @brief Calcul pa puissance de a par b 
+ * 
+ * @param a 
+ * @param b 
+ * @return int 
+ */
+int puissance ( int a, int b ){
     int resultat =1;
         for(int i=0;i<b;i++){
             resultat*=a;
         }
     return resultat;
 }
-///////////////////////////////////END OF FUNCTION//////////////////////////////////////////
 
-
-//////////////////////FCT creation d'une socket/////////////////////////////////////////////
+/**
+ * @brief Creer un socket et verifier si erreur, exit si erreur 
+ * 
+ * @param desc 
+ * @return int 
+ */
 int creationSocket (int desc){
     if ((desc=socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP))==-1){
         raler("socket");
     }
 return desc;
 }
-///////////////////////////////////END 
 
 
 
+/**
+ * @brief Procede du 4 way handshake du cote serveur 
+ * 0 si bonne fermeture, 1 sinon
+ * @param s 
+ * @param ecoute 
+ * @param envoie 
+ * @return int 
+ */
 int fermeture_connection_serveur(int s,struct sockaddr_in ecoute,
 struct sockaddr_in envoie)
 {
@@ -136,14 +164,9 @@ struct sockaddr_in envoie)
                     if(close(s)==-1){
                         raler("close");
                     }
-                    exit(1);  
+                    exit(0);  
                 }
             }
-
-
-
-        }else{
-            continue;
         }
     }
 
@@ -156,8 +179,15 @@ struct sockaddr_in envoie)
 
 
 
-
-//////////////////////FCT fermeture source/////////////////////////////////////////////
+/**
+ * @brief Procede du 4 way handshake du cote source(client) 
+ * 0 si bonne fermeture, 1 sinon 
+ * 
+ * @param s 
+ * @param ecoute 
+ * @param envoie 
+ * @return int 
+ */
 int fermeture_connection_source(int s,struct sockaddr_in ecoute,
 struct sockaddr_in envoie)
 {
@@ -210,27 +240,33 @@ struct sockaddr_in envoie)
                 if(close(s)==-1){
                     raler("close");
                 }  
-                exit(1);
+                exit(0);
             }
             
         }else{
             continue;
         }
     }
-    exit(-1);
+    exit(1);
 
 } 
-///////////////////////////////////END //////////////////////////////////////
 
 
 
-//////////////////////////////FCT ETABLISSEMENT DE CONNEXION COTÉ SOURCE /////////////////
-
+/**
+ * @brief Procede du 3 way handshake du cote source(client) 
+ * 0 si bonne fermeture, 1 sinon 
+ * 
+ * @param s 
+ * @param ecoute 
+ * @param envoie 
+ * @return int 
+ */
 
 int etablissementConnexionSource(int s,struct sockaddr_in ecoute,
 struct sockaddr_in envoie){
 
-    int a = generateRandInt(100);
+    unsigned short a = generateRandInt(100);
     struct packet p=init_packet() ;
     socklen_t size=sizeof(ecoute);
 
@@ -288,7 +324,7 @@ struct sockaddr_in envoie){
                     exit(EXIT_FAILURE);
                 }
                 printf("connexion établie!\n");
-               // ID=0;              
+                ID=0;              
                 return 1 ;
         }else{
             continue;
@@ -297,9 +333,17 @@ struct sockaddr_in envoie){
     
 
 }
-//////////////////////////////////END FUNCTION ///////////////////////////////////////////
 
-//////////////////////////////////FCT ETABLISSEMENT DE CONNEXION COTÉ SERVEUR ////////////////
+
+/**
+ * @brief Procede du 3 way handshake du cote destination(server) 
+ * 0 si bonne fermeture, 1 sinon 
+ * 
+ * @param s 
+ * @param ecoute 
+ * @param envoie 
+ * @return int 
+ */
 int etablissementConnexionServer (int s,struct sockaddr_in ecoute,
 struct sockaddr_in envoie){
    
@@ -358,12 +402,13 @@ struct sockaddr_in envoie){
             printf("ETAPE3: RECU seq = %d et l'ack =%d\n",p.seq,p.acq);
             if(p.acq==b+1){
                 printf("connexion établie :)\n");
+                return 0;
                 ID=0;              
-                return 1;
+
             }
             else{
-                //ID=0;              
-                return-1;
+                ID=0;              
+                return 1;
             }
         }
         else {//rien sur le socket?
@@ -371,17 +416,22 @@ struct sockaddr_in envoie){
             continue;
         }
     }
-    //ID=0;              
-    return -1;
+    ID=0;              
+    return 1;
 }
-//////////////////////////////////END FUNCTION ///////////////////////////////////////////
 
 
 
 
 
-//////////////////////////////////FCT STOP AND WAIT COTÉ SERVEUR /////////////////////////
-
+/**
+ * @brief Fonction implementant la procedure stop n wait,cote server 
+ * 
+ * @param s 
+ * @param ecoute 
+ * @param envoie 
+ * @return int 
+ */
 int stopNwaitServer (int s,struct sockaddr_in ecoute,
     struct sockaddr_in envoie){
 
@@ -457,4 +507,3 @@ int stopNwaitServer (int s,struct sockaddr_in ecoute,
     }      
     return 1;
 }
-    //////////////////////////////////END FUNCTION ///////////////////////////////////////////
