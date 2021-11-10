@@ -508,3 +508,22 @@ int stopNwaitServer (int s,struct sockaddr_in ecoute,
     }      
     return 1;
 }
+
+
+/**
+ * @brief Fonction implementant la procedure go-back-N,cote server 
+ * 
+ * @param s 
+ * @param ecoute 
+ * @param envoie 
+ * @return int 
+ */
+int go_back_N_serevr (int s,struct sockaddr_in ecoute,
+    struct sockaddr_in envoie){
+int resultat =0;
+
+
+
+
+return resultat;
+}
