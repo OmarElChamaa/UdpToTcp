@@ -16,7 +16,7 @@ struct sockaddr_in envoie){
 
     clock_t begin = clock();
 
-    FILE *gnuplot = popen("StopWaitFig.gnu", "w");
+    FILE *gnuplot = popen("StopWaitFig.gnu -persistent", "w");
 
     struct packet p=init_packet() ;
     int altern = 0 ; 
@@ -106,7 +106,7 @@ struct sockaddr_in envoie){
                 //tester si p.type == 16 
                 if(p.acq==(altern+1)%2 ){
                     altern =(altern+1)%2;
-                    printf("Jai recu in je modif altern \n ");
+                    printf("Jai recu in je modif altern %d \n ",altern);
                     p.seq=altern ;
                     id++;
                     p.id=id ;

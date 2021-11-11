@@ -43,10 +43,10 @@ int generateRandInt(int max){
 
 void dessinerFigure(FILE *gnuplot,int envoie, int perdu,double temps){
     fprintf(gnuplot, "plot '-'\n");
-    fprintf(gnuplot,"%d %d\n", envoie, temps);
+    fprintf(gnuplot,"%d %f\n", envoie, temps);
 
     fprintf(gnuplot, "plot '*'\n");
-    fprintf(gnuplot,"%d %d\n", perdu, temps);
+    fprintf(gnuplot,"%d %f\n", perdu, temps);
 }
 
 /**
@@ -448,7 +448,7 @@ int stopNwaitServer (int s,struct sockaddr_in ecoute,
     struct sockaddr_in envoie){
 
 
-    char *fn = "testColle.txt";
+    FILE *fn = "testColle.txt";
     int numAck=0,retour=0;
     struct packet p=init_packet();
 
@@ -491,19 +491,23 @@ int stopNwaitServer (int s,struct sockaddr_in ecoute,
                 return fermeture_connection_serveur(s,ecoute,envoie);
             }
 
-            //recuperer les données recues:
-            printf("ETAPE1 : J'ai recu un paquet son seq est à %d\n",p.seq);
-            printf("Données reçues : %s\n",p.data);
+            
             //Afficher le msg reçu :
             if(p.seq==numAck){
+                //recuperer les données recues:
+                printf("ETAPE1 : J'ai recu un paquet son seq est à %d\n",p.seq);
+                printf("%d \n",p.seq);
                 fprintf(fp,"%s",p.data);
                 printf("Données reçues : %s\n",p.data);
+                printf("je recoit un nouveau paquet avec mon ACK à :%d \n",numAck);
+                p.acq=numAck;
                 numAck=(numAck+1)%2;
-                printf("je recoit un nouveau paquet et donc j'incremente ACK :%d \n",numAck);
+
             }
             
-
-            p.acq=numAck;
+            else{
+                p.acq=numAck;
+            }
 
             //envoie d'ACK
             int sen=sendto(s,&p, DEFAULTSIZE,0,(struct sockaddr*)&envoie,size);
