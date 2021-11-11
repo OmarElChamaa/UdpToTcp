@@ -13,7 +13,11 @@ int id = 0 ;
 
 int stopNwait(int s,struct sockaddr_in ecoute,
 struct sockaddr_in envoie){
-    
+
+    clock_t begin = clock();
+
+    FILE *gnuplot = popen("StopWaitFig.gnu", "w");
+
     struct packet p=init_packet() ;
     int altern = 0 ; 
     p.seq=altern ;
@@ -60,7 +64,7 @@ struct sockaddr_in envoie){
             }
             raler("Sendto");
         }
-        
+        messagesEnvoyes ++ ; 
         retval=select(FD_SETSIZE+1,&fd_monitor,NULL,NULL,&tv);
         switch (retval)
         {
@@ -80,12 +84,17 @@ struct sockaddr_in envoie){
                 }
                 raler("Sendto");
             }
+            messagesEnvoyes ++ ; 
             if(FD_ISSET(s,&fd_monitor)){  
                 x=recvfrom(s,&p,DEFAULTSIZE,0,
                 (struct sockaddr*)&ecoute,&size);
 
                 if(p.type==2){
-                    fermeture_connection_source(s,ecoute,envoie);
+                    clock_t end = clock();
+                    double time_spent = (double)(end - begin) / CLOCKS_PER_SEC;
+                    dessinerFigure(gnuplot,messagesEnvoyes,messagesPerdus,time_spent);
+                    fflush(gnuplot);
+                    return fermeture_connection_source(s,ecoute,envoie);
                 }
 
                 if(x==-1){
@@ -104,13 +113,28 @@ struct sockaddr_in envoie){
                     fgets(p.data,TAILLEFEN, fp );
                     if( feof(fp) ) {
                         fclose(fp); 
-                        //endConnexion ; 
                         printf("Plus de donnees a lire ;\n");
+                        clock_t end = clock();
+                        double time_spent = (double)(end - begin) / CLOCKS_PER_SEC;
+                        dessinerFigure(gnuplot,messagesEnvoyes,messagesPerdus,time_spent);
+                        fflush(gnuplot);
                         return fermeture_connection_source(s,ecoute,envoie);
                     }
+
+                    clock_t end = clock();
+                    double time_spent = (double)(end - begin) / CLOCKS_PER_SEC;
+                    dessinerFigure(gnuplot,messagesEnvoyes,messagesPerdus,time_spent);
+
                     fseek(fp, TAILLEFEN, SEEK_CUR);
                     printf("donnees lu sont %s \n",p.data);
                     continue;
+                }else{ // message perdu ou acq non recu 
+                    messagesPerdus ++ ; 
+
+                    clock_t end = clock();
+                    double time_spent = (double)(end - begin) / CLOCKS_PER_SEC;
+                    dessinerFigure(gnuplot,messagesEnvoyes,messagesPerdus,time_spent);
+                    continue ; 
                 }
 
                 //else if
@@ -147,7 +171,7 @@ int main (){
     
 
     int x =etablissementConnexionSource(s,ecoute,envoie);
-    if(x==1){
+    if(x==0){
         stopNwait(s,ecoute,envoie);
     }
     printf("%d \n", x);

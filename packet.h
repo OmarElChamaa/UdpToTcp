@@ -24,7 +24,9 @@
 
 
 char ID=0;
-
+//variqbles quon utilise pour les Figures au rapport 
+int messagesEnvoyes = 0 ; //hors etablissement  
+int messagesPerdus = 0 ; //hors etablissement 
 
 /**
  * @brief genere un int aleatoire entre 0 et max 
@@ -37,6 +39,15 @@ int generateRandInt(int max){
     int r = rand() % max;
     return r;
 } 
+
+
+void dessinerFigure(FILE *gnuplot,int envoie, int perdu,double temps){
+    fprintf(gnuplot, "plot '-'\n");
+    fprintf(gnuplot,"%d %d\n", envoie, temps);
+
+    fprintf(gnuplot, "plot '*'\n");
+    fprintf(gnuplot,"%d %d\n", perdu, temps);
+}
 
 /**
  * @brief structure du message ou packet 
@@ -326,7 +337,7 @@ struct sockaddr_in envoie){
                 }
                 printf("connexion établie!\n");
                 ID=0;              
-                return 1 ;
+                return 0 ;
         }else{
             continue;
         }
