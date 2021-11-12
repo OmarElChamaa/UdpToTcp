@@ -155,6 +155,7 @@ int main (){
     int s=0;
     struct sockaddr_in ecoute;
     struct sockaddr_in envoie;
+    char mode ='0'; ///ca va etre intialiser a argv[1]
 
     s = socket(AF_INET, SOCK_DGRAM, 0);
 
@@ -170,7 +171,7 @@ int main (){
     inet_pton(AF_INET,"127.0.0.1",&(envoie.sin_addr));
     
 
-    int x =etablissementConnexionSource(s,ecoute,envoie);
+    int x =etablissementConnexionSource(s,ecoute,envoie,mode);
     if(x==0){
         stopNwait(s,ecoute,envoie);
     }

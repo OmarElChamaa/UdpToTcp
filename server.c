@@ -23,9 +23,18 @@ int main (){
     inet_pton(AF_INET,"127.0.0.1",&(envoie.sin_addr));
 
     int x =etablissementConnexionServer(s,ecoute,envoie);
-    if(x==0){
+    
+    if(x==1){//probleme de connexion
+        printf("Pb de connexion retour 1\n")   ;
+    }
+
+    if(x==0){//mode stop and wait
         stopNwaitServer(s,ecoute,envoie);
     }
+     if(x==2){//mode Go back N
+        go_back_N_serevr(s,ecoute,envoie);
+    }
+
     printf("%d \n", x);
 return 0;
 

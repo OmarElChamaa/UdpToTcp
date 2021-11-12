@@ -275,7 +275,7 @@ struct sockaddr_in envoie)
  */
 
 int etablissementConnexionSource(int s,struct sockaddr_in ecoute,
-struct sockaddr_in envoie){
+struct sockaddr_in envoie,char mode){
 
     unsigned short a = generateRandInt(100);
     struct packet p=init_packet() ;
@@ -323,6 +323,7 @@ struct sockaddr_in envoie){
                     p.seq=a+1;
                     p.type=16;
                     p.id=ID++;//id++               
+                    p.data[0]=mode;/////mode si 0 stopAndWait si 1 GobackN 
                     printf("ETAPE3 : J'ai mit seq à %d et ack à %d\n",p.seq,p.acq);
                     //envoyer le dernier paquet en confirmant avoir recu l'ack
                     r=sendto(s,&p,DEFAULTSIZE,0,(struct sockaddr * )&envoie,sizeof(struct sockaddr));
@@ -413,8 +414,21 @@ struct sockaddr_in envoie){
             
             printf("ETAPE3: RECU seq = %d et l'ack =%d\n",p.seq,p.acq);
             if(p.acq==b+1){
-                printf("connexion établie :)\n");
-                return 0;
+                //test de mode 
+                if(p.data[0]=='0'){//stopAndWait
+                    printf("connexion établie - \t - mode Stop And Wait :)\n");
+                    return 0;
+                }
+                else{//GoBackN
+                    if(p.data[0]=='1'){
+                        printf("connexion établie - \t - mode Go-Back-N :)\n");
+                        return 2;
+                    }
+                    else{
+                        printf("Mode iconnue - Merci de de passer 0 ou 1 en parametre :(\n");
+                        return 1;
+                    }
+                }
                 ID=0;              
 
             }
