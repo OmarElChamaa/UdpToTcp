@@ -3,6 +3,8 @@
 #include <stdlib.h>
 #include <stdarg.h>
 #include <stdio.h>
+#include <unistd.h>
+
 
 #include <sys/wait.h>
 #include <sys/stat.h>
