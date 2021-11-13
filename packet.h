@@ -440,7 +440,7 @@ struct sockaddr_in envoie){
             }
         }
         else {//rien sur le socket?
-            printf("rien reçu .. \nDeuxième tentative en cours\nMerci de patienter\n");
+            printf("rien reçu .. \nNouvelle tentative en cours\nMerci de patienter\n");
             continue;
         }
     }
