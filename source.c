@@ -1,6 +1,8 @@
 #include "packet.h"
 #include <unistd.h>
 
+
+
 int id = 0 ;
 
 /**
@@ -151,6 +153,7 @@ struct sockaddr_in envoie){
 
 
 
+
 int main (){
     int s=0;
     struct sockaddr_in ecoute;
@@ -179,3 +182,4 @@ int main (){
 
     return 0;
 }
+

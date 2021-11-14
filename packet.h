@@ -284,7 +284,6 @@ struct sockaddr_in envoie,char mode){
     struct packet p=init_packet() ;
     socklen_t size=sizeof(ecoute);
 
-    
     p.id=0;
     p.seq=a;
     p.type+=1;
@@ -327,7 +326,7 @@ struct sockaddr_in envoie,char mode){
                     p.type=16;
                     p.id=ID++;//id++               
                     p.data[0]=mode;/////mode si 0 stopAndWait si 1 GobackN 
-                    printf("ETAPE3 : J'ai mit seq à %d et ack à %d et mode a %c\n",p.seq,p.acq,mode);
+                    printf("ETAPE3 : J'ai mit seq à %d et ack à %d\n",p.seq,p.acq);
                     //envoyer le dernier paquet en confirmant avoir recu l'ack
                     r=sendto(s,&p,DEFAULTSIZE,0,(struct sockaddr * )&envoie,sizeof(struct sockaddr));
                     if(r==-1){
@@ -378,8 +377,8 @@ struct sockaddr_in envoie){
 
 
     while(1){
-        tv.tv_sec = 10;
-        tv.tv_usec = 0;
+         tv.tv_sec = 10;
+         tv.tv_usec = 0;
         retval = select(FD_SETSIZE+1, &fd_monitor, NULL, NULL, &tv);
         if(retval==-1){
             close(s);
@@ -448,6 +447,8 @@ struct sockaddr_in envoie){
     ID=0;              
     return 1;
 }
+
+
 
 
 
