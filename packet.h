@@ -27,8 +27,8 @@
 
 char ID=0;
 //variqbles quon utilise pour les Figures au rapport 
-int messagesEnvoyes = 0 ; //hors etablissement  
-int messagesPerdus = 0 ; //hors etablissement 
+double messagesEnvoyes = 0 ; //hors etablissement  
+double messagesPerdus = 0 ; //hors etablissement 
 
 /**
  * @brief genere un int aleatoire entre 0 et max 
@@ -43,12 +43,21 @@ int generateRandInt(int max){
 } 
 
 
-void dessinerFigure(FILE *gnuplot,int envoie, int perdu,double temps){
-    fprintf(gnuplot, "plot '-'\n");
-    fprintf(gnuplot,"%d %f\n", envoie, temps);
+void dessinerFigure(FILE *gnuplot,double envoie, double perdu,double temps){
+    fprintf(gnuplot, "plot '-' \n");
+    fprintf(gnuplot,"%f %lf\n", temps, envoie);
 
-    fprintf(gnuplot, "plot '*'\n");
-    fprintf(gnuplot,"%d %f\n", perdu, temps);
+
+    fprintf(gnuplot, "plot '-' with points pt \"#\"\n");
+    fprintf(gnuplot,"%f %lf\n", temps,  perdu);
+    
+}
+
+
+void setupPlotStop(FILE *gnuplot){
+    fprintf(gnuplot, "set terminal png size 600,600\nset output'figStopNwait.png'\n");
+    fprintf(gnuplot, "set xlabel \"temps en s\"\nset ylabel \"nbr messages\"\n");
+    fprintf(gnuplot, "set title \"message perdu et envoye par rapport au temps\"\n");
 }
 
 /**
@@ -209,7 +218,7 @@ struct sockaddr_in envoie)
     p.type=2; 
 
     
-
+//printf("je commence la fermeture\n");
 
     fd_set fd_monitor;
     struct timeval tv;
@@ -219,7 +228,7 @@ struct sockaddr_in envoie)
     FD_SET(s, &fd_monitor);
 
     while(1){
-        tv.tv_sec = 10;
+        tv.tv_sec = 2;
         tv.tv_usec = 0;
 
         
@@ -261,7 +270,6 @@ struct sockaddr_in envoie)
         }
     }
     exit(1);
-
 } 
 
 
@@ -549,12 +557,51 @@ int stopNwaitServer (int s,struct sockaddr_in ecoute,
  * @param envoie 
  * @return int 
  */
+ 
 int go_back_N_serevr (int s,struct sockaddr_in ecoute,
     struct sockaddr_in envoie){
 int resultat =0;
+ 
+/*
+int numAck=0,retour=0;
+int fenetre_reception[N];
+int nb_places_libres = N;
+int position =0;
+
+
+    struct packet p=init_packet();
+
+    fd_set fd_monitor;
+    struct timeval tv;
+    int retval;
+
+    FD_ZERO(&fd_monitor);
+    FD_SET(s, &fd_monitor);
+    socklen_t size=sizeof(ecoute);
+
+    while(1){
+        tv.tv_sec = 4;
+        tv.tv_usec = 0;
+        retval = select(FD_SETSIZE+1, &fd_monitor, NULL, NULL, &tv);
+        if(retval==-1){
+            if(close(s)==-1){
+                raler("close");
+            }            
+            raler("select Go-Back-N server\n");
+        }
+
+        if(FD_ISSET(s,&fd_monitor)){
+            printf("data ready\n");//Je receve et je test et si tout va bien je renvois avec les nouvelles valeurs
+
+            if((retour=recvfrom(s,&p,DEFAULTSIZE+1,0,(struct sockaddr*)&ecoute,&size))==-1){
+                raler("recvfrom");
+            } 
+        
+        }
+    
 
 
 
-
+*/
 return resultat;
 }

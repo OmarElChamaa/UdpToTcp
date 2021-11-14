@@ -18,7 +18,8 @@ struct sockaddr_in envoie){
 
     clock_t begin = clock();
 
-    FILE *gnuplot = popen("StopWaitFig.gnu -persistent", "w");
+    FILE *gnuplot = fopen("StopWaitFig.p", "w");
+    setupPlotStop(gnuplot);
 
     struct packet p=init_packet() ;
     int altern = 0 ; 
@@ -92,10 +93,13 @@ struct sockaddr_in envoie){
                 (struct sockaddr*)&ecoute,&size);
 
                 if(p.type==2){
+                    printf("jai recu type = 2 ");
                     clock_t end = clock();
                     double time_spent = (double)(end - begin) / CLOCKS_PER_SEC;
                     dessinerFigure(gnuplot,messagesEnvoyes,messagesPerdus,time_spent);
+                    fprintf(gnuplot, "e");
                     fflush(gnuplot);
+                    fclose (gnuplot);
                     return fermeture_connection_source(s,ecoute,envoie);
                 }
 
@@ -119,13 +123,15 @@ struct sockaddr_in envoie){
                         clock_t end = clock();
                         double time_spent = (double)(end - begin) / CLOCKS_PER_SEC;
                         dessinerFigure(gnuplot,messagesEnvoyes,messagesPerdus,time_spent);
+                        fprintf(gnuplot, "e");
                         fflush(gnuplot);
+                        fclose (gnuplot);
                         return fermeture_connection_source(s,ecoute,envoie);
                     }
 
                     clock_t end = clock();
                     double time_spent = (double)(end - begin) / CLOCKS_PER_SEC;
-                    dessinerFigure(gnuplot,messagesEnvoyes,messagesPerdus,time_spent);
+                    //dessinerFigure(gnuplot,messagesEnvoyes,messagesPerdus,time_spent);
 
                     fseek(fp, TAILLEFEN, SEEK_CUR);
                     printf("donnees lu sont %s \n",p.data);
