@@ -23,6 +23,7 @@
 #define DEFAULTSIZE 42
 #define ACQ 16
 #define TAILLEFEN 42
+#define N 100
 
 
 char ID=0;
@@ -561,8 +562,7 @@ int stopNwaitServer (int s,struct sockaddr_in ecoute,
 int go_back_N_serevr (int s,struct sockaddr_in ecoute,
     struct sockaddr_in envoie){
 int resultat =0;
- 
-/*
+
 int numAck=0,retour=0;
 int fenetre_reception[N];
 int nb_places_libres = N;
@@ -595,13 +595,48 @@ int position =0;
 
             if((retour=recvfrom(s,&p,DEFAULTSIZE+1,0,(struct sockaddr*)&ecoute,&size))==-1){
                 raler("recvfrom");
-            } 
+            }
+            // fermeture connection avec FIN 
+            if(p.type==2){
+                printf("Jai recu mon message de fin \n");
+                return fermeture_connection_serveur(s,ecoute,envoie);
+            }
+            //Test si le paquet est un nouveau paquet
+            //si oui, une place de plus est occupée avec le numéro de séquence de ce paquet et traite les données
+            
+            //Sinon je renvoie le dernier acq
+            }
+            
+
         
-        }
-    
+    }
+
+return resultat;
+}
 
 
 
-*/
+
+
+/**
+ * @brief Fonction implementant la procedure go-back-N,cote source 
+ * 
+ * @param s 
+ * @param ecoute 
+ * @param envoie 
+ * @return int 
+ */
+ 
+int go_back_N_source (int s,struct sockaddr_in ecoute,
+    struct sockaddr_in envoie){
+int resultat =0;
+ 
+
+int numAck=0,retour=0;
+packet fenetre_emission[N];
+int nb_places_libres = N;
+int position =0;
+packet *fenetre_congestion= malloc(sizeof(packet));
+
 return resultat;
 }

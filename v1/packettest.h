@@ -25,23 +25,23 @@ int ID =0;
 
 typedef struct Type
 {
-    int ACK ; 
-    int RST ;
-    int FIN; 
-    int SYN; 
+    int ACK :2; 
+    int RST :2;
+    int FIN :2; 
+    int SYN :2; 
   
 }Type;
 
 
 typedef struct packet
 {
-    int id ; 
-    struct Type type ; 
-    int seq ;
-    int acq; 
-    int ecn ;
-    int fenetre ; 
-    void * data ; 
+    int id : 8 ; 
+    struct Type type  ; 
+    int seq : 16 ;
+    int acq : 16 ; 
+    int ecn : 8 ;
+    int fenetre :8 ; 
+    char * data; 
 }packet;
 
 
@@ -206,8 +206,7 @@ int binding(int sock, int myPort,struct sockaddr_in addr){
     if((x = bind(sock ,(struct sockaddr * ) &addr , address_len )) == -1 ){
         raler("bind");
     }
-    return x ;
-    
+    return x ;  
 }
 ///////////////////////////////////END OF FUNCTION//////////////////////////////////////////
 
@@ -282,7 +281,7 @@ const char  * intToEightBit(int x){
 /////////////////////////////////////FCT AJOUT N YERO //////////////////
 char  * ajoutNZero(int x,int nbZero){
 
-    char * str=malloc(sizeof(char *));
+    char  str[nbZero];
     sprintf(str,"%d",x);
     int numDigits = strlen(str);
 
@@ -293,7 +292,7 @@ char  * ajoutNZero(int x,int nbZero){
         //raler("ajoutNZero");
     } 
 
-    char * v=malloc(sizeof(char *));
+    char v[aAjouter];
 
     for(int i = 0 ; i<aAjouter ; i++){
         strcat(v,"0");
@@ -312,26 +311,12 @@ char  * ajoutNZero(int x,int nbZero){
 void generatePacket(struct packet p,char * packetHeader2){
 
     const char *id = ajoutNZero( dec_to_Intbin(p.id),8);
-    
-    printf("ID IS %s \n ",id);
     int x = p.type.ACK+p.type.RST+p.type.FIN+p.type.SYN ; 
-
-    const char *type = intToEightBit(dec_to_Intbin(x));
-    printf("type is %s \n ",type);
-
+    const char *type = ajoutNZero(dec_to_Intbin(x),8);
     char *seq = ajoutNZero(dec_to_Intbin(p.seq),16);
-
-    printf("seq is %s \n ",seq);
-
-
     char *acq = ajoutNZero(dec_to_Intbin(p.acq),16);
-
-    printf("acq is %s \n ",acq);
-    const char *ecn = intToEightBit(dec_to_Intbin(p.ecn));
-
-    printf("ecn is %s \n ",ecn);
-    const char *fen = intToEightBit(dec_to_Intbin(p.fenetre));
-    printf("fen is %s \n ",fen);
+    const char *ecn = ajoutNZero(dec_to_Intbin(p.ecn),8);
+    const char *fen = ajoutNZero(dec_to_Intbin(p.fenetre),8);
 
     strcat(packetHeader2,id);
     printf("PACKET HEADER IS   : %s , taille : %ld \n ID IS %s \n",packetHeader2,strlen(id),id);
@@ -462,9 +447,9 @@ struct sockaddr_in envoie){
   
 
     while(1){
-         tv.tv_sec = 13;
+         tv.tv_sec = 10;
          tv.tv_usec = 0;
-        retval = select(1, &fd_monitor, NULL, NULL, &tv);
+        retval = select(FD_SETSIZE+1, &fd_monitor, NULL, NULL, &tv);
         if(retval==-1){
             close(s);
             raler("select etablissement\n");
@@ -472,7 +457,7 @@ struct sockaddr_in envoie){
         if(FD_ISSET(s,&fd_monitor)){
             printf("data ready");//Je receve et je test et si tout va bien je renvois avec les nouvelles valeurs
 
-            if((retour=recvfrom(s,buf,DEFAULTSIZE,0,(struct sockaddr*)&ecoute,&size))==-1){
+            if((retour=recvfrom(s,buf,DEFAULTSIZE+1,0,(struct sockaddr*)&ecoute,&size))==-1){
                 raler("recvfrom");
             }
             printf("data recieved\n");
@@ -527,6 +512,7 @@ struct sockaddr_in envoie){
 
     p.id=ID++ ;
     p.type.SYN=1;
+    p.acq = 16 ; 
     p.seq=a;
 
     char * packetToSend = malloc(sizeof(char)*DEFAULTSIZE) ;
@@ -547,7 +533,7 @@ struct sockaddr_in envoie){
         tv.tv_usec = 0;
         sendto(s,packetToSend,DEFAULTSIZE,0,(struct sockaddr*)&envoie,size);
 
-        retval = select(1, &fd_monitor, NULL, NULL, &tv);
+        retval = select(FD_SETSIZE+1, &fd_monitor, NULL, NULL, &tv);
             if(retval==-1){
                 printf("select etablissement\n");
             }
