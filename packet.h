@@ -43,7 +43,14 @@ int generateRandInt(int max){
     return r;
 } 
 
-
+/**
+ * @brief Fonction servant a ecrire les donnees respective pour les tracer 
+ * 
+ * @param gnuplot 
+ * @param envoie 
+ * @param perdu 
+ * @param temps 
+ */
 void dessinerFigure(FILE *gnuplot,double envoie, double perdu,double temps){
     fprintf(gnuplot, "plot '-' \n");
     fprintf(gnuplot,"%f %lf\n", temps, envoie);
@@ -54,7 +61,11 @@ void dessinerFigure(FILE *gnuplot,double envoie, double perdu,double temps){
     
 }
 
-
+/**
+ * @brief Pour setup la legende de la figure stop n wait 
+ * 
+ * @param gnuplot 
+ */
 void setupPlotStop(FILE *gnuplot){
     fprintf(gnuplot, "set terminal png size 600,600\nset output'figStopNwait.png'\n");
     fprintf(gnuplot, "set xlabel \"temps en s\"\nset ylabel \"nbr messages\"\n");
@@ -586,7 +597,7 @@ struct sockaddr_in envoie){
 
                     clock_t end = clock();
                     double time_spent = (double)(end - begin) / CLOCKS_PER_SEC;
-                    //dessinerFigure(gnuplot,messagesEnvoyes,messagesPerdus,time_spent);
+                    dessinerFigure(gnuplot,messagesEnvoyes,messagesPerdus,time_spent);
 
                     fseek(fp, TAILLEFEN, SEEK_CUR);
                     printf("donnees lu sont %s \n",p.data);
@@ -712,12 +723,11 @@ int stopNwaitServer (int s,struct sockaddr_in ecoute,
  
 int go_back_N_serevr (int s,struct sockaddr_in ecoute,
     struct sockaddr_in envoie){
-int resultat =0;
-
-int numAck=0,retour=0;
-int fenetre_reception[N];
-int nb_places_libres = N;
-int position =0;
+    int resultat =0;
+    int numAck=0,retour=0;
+    int fenetre_reception[N];
+    int nb_places_libres = N;
+    int position =0;
 
 
     struct packet p=init_packet();
@@ -780,89 +790,87 @@ return resultat;
  
 int go_back_N_source (int s,struct sockaddr_in ecoute,
     struct sockaddr_in envoie){
-int resultat =0;
- 
-
-int numAck=0,retour=0;
-packet fenetre_emission[N];
-int nb_places_libres = N;
-int position =0;
-int messagesPerdusALaSuite =0;
-int dernierPerdu=-5;
-packet *fenetre_congestion= malloc(sizeof(packet)*1);//peut-etre il faut l'initialiser ==> a voir
-//int taille_fenetre_congestion = 1;
-packet tmp= init_packet();
+    int resultat =0;
+   int numAck=0,retour=0;
+    packet fenetre_emission[N];
+    int nb_places_libres = N;
+    int position =0;
+    int messagesPerdusALaSuite =0;
+    int dernierPerdu=-5;
+    packet *fenetre_congestion= malloc(sizeof(packet)*1);//peut-etre il faut l'initialiser ==> a voir
+    //int taille_fenetre_congestion = 1;
+    packet tmp= init_packet();
 
 
-fd_set fd_monitor;
-struct timeval tv;
-int retval;
+    fd_set fd_monitor;
+    struct timeval tv;
+    int retval;
 
-FD_ZERO(&fd_monitor);
-FD_SET(s, &fd_monitor);
+    FD_ZERO(&fd_monitor);
+    FD_SET(s, &fd_monitor);
 
-tv.tv_sec = 4;
-tv.tv_usec = 0;
+    tv.tv_sec = 4;
+    tv.tv_usec = 0;
 
-int x=0;
-socklen_t size=sizeof(ecoute);
+    int x=0;
+    socklen_t size=sizeof(ecoute);
 
-while(1){
-    for(int i=0;i<N;i++){
-        if(nb_places_libres>0){
-            tmp=fenetre_emission[position];
-            tmp.seq=(short)position;//cast à voir
-            x = sendto(s,&tmp,DEFAULTSIZE+1,0,(struct sockaddr*)&envoie,sizeof(envoie)); 
-            if(x==-1){
-                if(close(s)==-1){
-                    raler("close");
+    while(1){
+        for(int i=0;i<N;i++){
+            if(nb_places_libres>0){
+                tmp=fenetre_emission[position];
+                tmp.seq=(short)position;//cast à voir
+                x = sendto(s,&tmp,DEFAULTSIZE+1,0,(struct sockaddr*)&envoie,sizeof(envoie)); 
+                if(x==-1){
+                    if(close(s)==-1){
+                        raler("close");
+                    }   
+                raler("Sendto");
                 }   
-            raler("Sendto");
-            }   
-        messagesEnvoyes ++ ; 
-        (nb_places_libres-=1)%N;
-        (position+=1)%N;
-        }
-        else{
-            retval=select(FD_SETSIZE+1,&fd_monitor,NULL,NULL,&tv);
-            //test retval 
-            //--
-            if(FD_ISSET(s,&fd_monitor)){  
-                x=recvfrom(s,&tmp,DEFAULTSIZE,0,
-                (struct sockaddr*)&ecoute,&size);
-
-                if(tmp.type==2){
-                    printf("jai recu type = 2 ");
-                    //gnuplot
-                    //..
-                    return fermeture_connection_source(s,ecoute,envoie);
-                }
-                else{//un acq est recu ==> je libere autant de places
-                nb_places_libres=nb_places_libres+(int)tmp.acq;//cast à voir
-                //application des regles d'augmentation de debit
-                //..
-                continue;//j'ai des places libres donc je continue 
-                }
-            }
-            else{//seq perdu
-            if (dernierPerdu==position-1){//deuxieme perdu a la suite 
-                messagesPerdusALaSuite++;//incrementation des messages perdus a la suite
+            messagesEnvoyes ++ ; 
+            (nb_places_libres-=1)%N;
+            (position+=1)%N;
             }
             else{
-                messagesPerdusALaSuite=-5;//sinon on revient à la valeur initiale des messages perdus à la suite
-            }
-            dernierPerdu=position;//le num de sequence du dernier message perdu
-            
-                if (messagesPerdusALaSuite ==3){
-                    //application des regles de diminuation de debit
+                retval=select(FD_SETSIZE+1,&fd_monitor,NULL,NULL,&tv);
+                //test retval 
+                //--
+                if(FD_ISSET(s,&fd_monitor)){  
+                    x=recvfrom(s,&tmp,DEFAULTSIZE,0,
+                    (struct sockaddr*)&ecoute,&size);
+
+                    if(tmp.type==2){
+                        printf("jai recu type = 2 ");
+                        //gnuplot
+                        //..
+                        return fermeture_connection_source(s,ecoute,envoie);
+                    }
+                    else{//un acq est recu ==> je libere autant de places
+                    nb_places_libres=nb_places_libres+(int)tmp.acq;//cast à voir
+                    //application des regles d'augmentation de debit
+                    //..
+                    continue;//j'ai des places libres donc je continue 
+                    }
                 }
-            continue;
+                else{//seq perdu
+                if (dernierPerdu==position-1){//deuxieme perdu a la suite 
+                    messagesPerdusALaSuite++;//incrementation des messages perdus a la suite
+                }
+                else{
+                    messagesPerdusALaSuite=-5;//sinon on revient à la valeur initiale des messages perdus à la suite
+                }
+                dernierPerdu=position;//le num de sequence du dernier message perdu
+                
+                    if (messagesPerdusALaSuite ==3){
+                        //application des regles de diminuation de debit
+                    }
+                continue;
+                }
             }
         }
+        continue;
     }
-continue;
-}
 
 
-return resultat;
+    return resultat;
 }
