@@ -211,6 +211,10 @@ struct sockaddr_in envoie)
  * @param envoie 
  * @return int 
  */
+
+
+//Conseil : gérer sigint dans votre source pour fermer la connexion proprement
+//!!!!!!!!!!!!
 int fermeture_connection_source(int s,struct sockaddr_in ecoute,
 struct sockaddr_in envoie)
 {
