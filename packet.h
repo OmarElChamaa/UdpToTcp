@@ -847,6 +847,9 @@ while(1){
             if (dernierPerdu==position-1){//deuxieme perdu a la suite 
                 messagesPerdusALaSuite++;//incrementation des messages perdus a la suite
             }
+            else{
+                messagesPerdusALaSuite=-5;//sinon on revient à la valeur initiale des messages perdus à la suite
+            }
             dernierPerdu=position;//le num de sequence du dernier message perdu
             
                 if (messagesPerdusALaSuite ==3){
