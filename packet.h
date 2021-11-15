@@ -460,6 +460,157 @@ struct sockaddr_in envoie){
 
 
 
+/**
+    @brief Fonction implementant la procedure stop n wait du cote source  
+    @param socket
+    @param sockaddr_in ecoute
+    @param sockaddr_in envoie
+    @return int 
+*/
+
+int stopNwait(int s,struct sockaddr_in ecoute,
+struct sockaddr_in envoie){
+
+    clock_t begin = clock();
+
+    FILE *gnuplot = fopen("StopWaitFig.p", "w");
+    setupPlotStop(gnuplot);
+
+    struct packet p=init_packet() ;
+    int altern = 0 ; 
+    p.seq=altern ;
+    p.id=ID ; 
+    p.type+=4;
+    p.fenetre=42;
+
+    fd_set fd_monitor;
+    struct timeval tv;
+    int retval;
+
+    FD_ZERO(&fd_monitor);
+    FD_SET(s, &fd_monitor);
+
+    tv.tv_sec = 5;
+    tv.tv_usec = 0;
+
+    FILE *fp=fopen("test.txt","r");
+
+    if(fp==NULL){
+        if(close(s)==-1){
+            raler("close");
+        }
+        raler("fopen");
+    }
+
+    fgets(p.data,TAILLEFEN, fp );
+    if( feof(fp) ) {
+        fclose(fp); 
+    }
+
+    fseek(fp, TAILLEFEN, SEEK_CUR);
+    printf("donnees lu sont %s \n",p.data);
+
+    int x=0;
+    socklen_t size=sizeof(ecoute);
+
+    while(1){
+        x = sendto(s,&p,DEFAULTSIZE+1,0,(struct sockaddr*)&envoie,
+        sizeof(envoie)); 
+        if(x==-1){
+            if(close(s)==-1){
+                raler("close");
+            }
+            raler("Sendto");
+        }
+        messagesEnvoyes ++ ; 
+        retval=select(FD_SETSIZE+1,&fd_monitor,NULL,NULL,&tv);
+        switch (retval)
+        {
+        case -1 :
+            if(close(s)==-1){
+                raler("close");
+            }
+            raler("select GO BACK \n");
+            break;
+        default :
+            x = sendto(s,&p,DEFAULTSIZE+1,0,(struct sockaddr*)&envoie,
+            sizeof(envoie)); 
+
+            if(x==-1){
+                if(close(s)==-1){
+                    raler("close");
+                }
+                raler("Sendto");
+            }
+            messagesEnvoyes ++ ; 
+            if(FD_ISSET(s,&fd_monitor)){  
+                x=recvfrom(s,&p,DEFAULTSIZE,0,
+                (struct sockaddr*)&ecoute,&size);
+
+                if(p.type==2){
+                    printf("jai recu type = 2 ");
+                    clock_t end = clock();
+                    double time_spent = (double)(end - begin) / CLOCKS_PER_SEC;
+                    dessinerFigure(gnuplot,messagesEnvoyes,messagesPerdus,time_spent);
+                    fprintf(gnuplot, "e");
+                    fflush(gnuplot);
+                    fclose (gnuplot);
+                    return fermeture_connection_source(s,ecoute,envoie);
+                }
+
+                if(x==-1){
+                    if(close(s)==-1){
+                        raler("close");
+                    }
+                    raler("recv from \n");
+                }
+                //tester si p.type == 16 
+                if(p.acq==(altern+1)%2 ){
+                    altern =(altern+1)%2;
+                    printf("Jai recu in je modif altern %d \n ",altern);
+                    p.seq=altern ;
+                    ID++;
+                    p.id=ID ;
+                    fgets(p.data,TAILLEFEN, fp );
+                    if( feof(fp) ) {
+                        fclose(fp); 
+                        printf("Plus de donnees a lire ;\n");
+                        clock_t end = clock();
+                        double time_spent = (double)(end - begin) / CLOCKS_PER_SEC;
+                        dessinerFigure(gnuplot,messagesEnvoyes,messagesPerdus,time_spent);
+                        fprintf(gnuplot, "e");
+                        fflush(gnuplot);
+                        fclose (gnuplot);
+                        return fermeture_connection_source(s,ecoute,envoie);
+                    }
+
+                    clock_t end = clock();
+                    double time_spent = (double)(end - begin) / CLOCKS_PER_SEC;
+                    //dessinerFigure(gnuplot,messagesEnvoyes,messagesPerdus,time_spent);
+
+                    fseek(fp, TAILLEFEN, SEEK_CUR);
+                    printf("donnees lu sont %s \n",p.data);
+                    continue;
+                }else{ // message perdu ou acq non recu 
+                    messagesPerdus ++ ; 
+
+                    clock_t end = clock();
+                    double time_spent = (double)(end - begin) / CLOCKS_PER_SEC;
+                    dessinerFigure(gnuplot,messagesEnvoyes,messagesPerdus,time_spent);
+                    continue ; 
+                }
+
+                //else if
+                //si je recoi syn + acq 
+                //je renvoie acq
+                
+            }
+            
+        }
+    }
+
+}
+
 
 
 
@@ -636,7 +787,78 @@ int numAck=0,retour=0;
 packet fenetre_emission[N];
 int nb_places_libres = N;
 int position =0;
-packet *fenetre_congestion= malloc(sizeof(packet));
+int messagesPerdusALaSuite =0;
+int dernierPerdu=-5;
+packet *fenetre_congestion= malloc(sizeof(packet)*1);//peut-etre il faut l'initialiser ==> a voir
+packet tmp= init_packet();
+
+
+fd_set fd_monitor;
+struct timeval tv;
+int retval;
+
+FD_ZERO(&fd_monitor);
+FD_SET(s, &fd_monitor);
+
+tv.tv_sec = 4;
+tv.tv_usec = 0;
+
+int x=0;
+socklen_t size=sizeof(ecoute);
+
+while(1){
+    for(int i=0;i<N;i++){
+        if(nb_places_libres>0){
+            tmp=fenetre_emission[position];
+            tmp.seq=(short)position;//cast à voir
+            x = sendto(s,&tmp,DEFAULTSIZE+1,0,(struct sockaddr*)&envoie,sizeof(envoie)); 
+            if(x==-1){
+                if(close(s)==-1){
+                    raler("close");
+                }   
+            raler("Sendto");
+            }   
+        messagesEnvoyes ++ ; 
+        (nb_places_libres-=1)%N;
+        (position+=1)%N;
+        }
+        else{
+            retval=select(FD_SETSIZE+1,&fd_monitor,NULL,NULL,&tv);
+            //test retval 
+            //--
+            if(FD_ISSET(s,&fd_monitor)){  
+                x=recvfrom(s,&tmp,DEFAULTSIZE,0,
+                (struct sockaddr*)&ecoute,&size);
+
+                if(tmp.type==2){
+                    printf("jai recu type = 2 ");
+                    //gnuplot
+                    //..
+                    return fermeture_connection_source(s,ecoute,envoie);
+                }
+                else{//un acq est recu ==> je libere autant de places
+                nb_places_libres=nb_places_libres+(int)tmp.acq;//cast à voir
+                //application des regles d'augmentation de debit
+                //..
+                continue;
+                }
+            }
+            else{//seq perdu
+            if (dernierPerdu==position-1){//deuxieme perdu a la suite 
+                messagesPerdusALaSuite++;//incrementation des messages perdus a la suite
+            }
+            dernierPerdu=position;//le num de sequence du dernier message perdu
+            
+                if (messagesPerdusALaSuite ==3){
+                    //application des regles de diminuation de debit
+                }
+            continue;
+            }
+        }
+    }
+continue;
+}
+
 
 return resultat;
 }
