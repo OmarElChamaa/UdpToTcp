@@ -841,7 +841,7 @@ while(1){
                 nb_places_libres=nb_places_libres+(int)tmp.acq;//cast à voir
                 //application des regles d'augmentation de debit
                 //..
-                continue;
+                continue;//j'ai des places libres donc je continue 
                 }
             }
             else{//seq perdu
