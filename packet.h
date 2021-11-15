@@ -790,6 +790,7 @@ int position =0;
 int messagesPerdusALaSuite =0;
 int dernierPerdu=-5;
 packet *fenetre_congestion= malloc(sizeof(packet)*1);//peut-etre il faut l'initialiser ==> a voir
+//int taille_fenetre_congestion = 1;
 packet tmp= init_packet();
 
 
