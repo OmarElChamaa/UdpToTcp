@@ -4,17 +4,12 @@
 #include <stdarg.h>
 #include <stdio.h>
 #include <unistd.h>
-
-
 #include <sys/wait.h>
 #include <sys/stat.h>
-
 #include <fcntl.h>
 #include <dirent.h>
-
 #include <sys/types.h>
 #include <sys/socket.h>
-
 #include <errno.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
@@ -30,6 +25,8 @@ char ID=0;
 //variqbles quon utilise pour les Figures au rapport 
 double messagesEnvoyes = 0 ; //hors etablissement  
 double messagesPerdus = 0 ; //hors etablissement 
+
+
 
 /**
  * @brief genere un int aleatoire entre 0 et max 
@@ -104,6 +101,14 @@ struct packet  init_packet(){
     return p;
 }
 
+typedef struct noeud {
+    int num; 
+    struct packet p;
+    struct noeud* suivant;
+}noeud;
+
+
+
 /**
  * @brief Renvoie la cause de l'erreur + exit a 1 
  * 
@@ -143,6 +148,52 @@ int creationSocket (int desc){
     }
 return desc;
 }
+
+
+
+void push(struct noeud** courant, struct packet p)
+{
+    struct noeud* nouveau_noeud = (struct noeud*) malloc(sizeof(struct noeud));
+    nouveau_noeud->p  = p;
+    nouveau_noeud->suivant = (*courant);
+    (*courant)    = nouveau_noeud;
+}
+
+
+void deleteNode(struct noeud** courant, int key)
+{
+    struct noeud *temp = *courant, *prev;
+
+    if (temp != NULL && temp->num == key) {
+        *courant = temp->suivant; // Changed head
+        free(temp); // free old head
+        return;
+    }
+ 
+
+    while (temp != NULL && temp->num != key) {
+        prev = temp;
+        temp = temp->suivant;
+    }
+
+    if (temp == NULL)
+        return;
+ 
+    prev->suivant = temp->suivant;
+ 
+    free(temp); 
+}
+
+void printList(struct noeud* node)
+{
+    while (node != NULL) {
+        printf(" %d ", node->num);
+        node = node->suivant;
+    }
+}
+
+
+
 
 
 
@@ -723,9 +774,10 @@ int stopNwaitServer (int s,struct sockaddr_in ecoute,
  
 int go_back_N_serevr (int s,struct sockaddr_in ecoute,
     struct sockaddr_in envoie){
+
     int resultat =0;
     int numAck=0,retour=0;
-    int fenetre_reception[N];
+    
     int nb_places_libres = N;
     int position =0;
 
@@ -787,20 +839,20 @@ return resultat;
  * @param envoie 
  * @return int 
  */
- 
 int go_back_N_source (int s,struct sockaddr_in ecoute,
     struct sockaddr_in envoie){
-    int resultat =0;
-   int numAck=0,retour=0;
-    packet fenetre_emission[N];
-    int nb_places_libres = N;
-    int position =0;
-    int messagesPerdusALaSuite =0;
-    int dernierPerdu=-5;
-    packet *fenetre_congestion= malloc(sizeof(packet)*1);//peut-etre il faut l'initialiser ==> a voir
-    //int taille_fenetre_congestion = 1;
-    packet tmp= init_packet();
 
+     
+    int taille_fenetre_congestion = 0 ;
+    int nb_places_libres = 1 ;
+    int messagesPerdusALaSuite =0 ;
+    int dernierPerdu=-5 ;
+    int taille_emission = 0 ;
+    int position = 0 ;
+
+    
+    struct noeud* node = (struct noeud*) malloc(sizeof(struct noeud)) ; 
+    struct noeud* tete = node;
 
     fd_set fd_monitor;
     struct timeval tv;
@@ -815,8 +867,71 @@ int go_back_N_source (int s,struct sockaddr_in ecoute,
     int x=0;
     socklen_t size=sizeof(ecoute);
 
+    FILE *fp=fopen("test.txt","r");
+
+    if(fp==NULL){
+        if(close(s)==-1){
+            raler("close");
+        }
+        raler("fopen");
+    }
+    while(!feof(fp)){
+        struct packet p = init_packet();
+        node->num=taille_fenetre_congestion;
+        taille_fenetre_congestion++;
+        fgets(p.data,42,fp );
+        push(&node,p);
+        printf("%s \n",p.data);
+    }
+    fclose(fp);
+
+    struct noeud *positions[taille_fenetre_congestion];
+    node=tete;
+    for(int i = 0 ; i<taille_fenetre_congestion;i++){
+        positions[i]=node;
+        node=node->suivant;
+    }
+    node=tete;
+
     while(1){
-        for(int i=0;i<N;i++){
+        if(nb_places_libres>0){
+            x = sendto(s,&node,DEFAULTSIZE+1,0,(struct sockaddr*)&envoie,sizeof(envoie)); 
+                if(x==-1){
+                    if(close(s)==-1){
+                        raler("close");
+                    }   
+                raler("Sendto");
+            }
+            messagesEnvoyes ++ ;  
+            (nb_places_libres-=1)%N;
+        }else{
+            retval=select(FD_SETSIZE+1,&fd_monitor,NULL,NULL,&tv);
+
+            if(FD_ISSET(s,&fd_monitor)){  
+                    x=recvfrom(s,&node,DEFAULTSIZE,0,
+                    (struct sockaddr*)&ecoute,&size);
+
+                    if(tmp.type==2){
+                        printf("jai recu type = 2 ");
+                        //gnuplot
+                        //..
+                        return fermeture_connection_source(s,ecoute,envoie);
+                    }
+                    else{//un acq est recu ==> je libere autant de places
+                    nb_places_libres=nb_places_libres+(int)tmp.acq;//cast à voir
+                    //application des regles d'augmentation de debit
+                    //..
+                    continue;//j'ai des places libres donc je continue 
+                    }
+                }
+        }
+
+    }
+    return 0;
+}
+
+
+for(int i=0;i<taille_fenetre_congestion;i++){
             if(nb_places_libres>0){
                 tmp=fenetre_emission[position];
                 tmp.seq=(short)position;//cast à voir
@@ -870,7 +985,3 @@ int go_back_N_source (int s,struct sockaddr_in ecoute,
         }
         continue;
     }
-
-
-    return resultat;
-}

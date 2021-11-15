@@ -24,13 +24,13 @@ int main (){
     envoie.sin_port = htons(4444); 
     inet_pton(AF_INET,"127.0.0.1",&(envoie.sin_addr));
     
-
+    /*
     int x =etablissementConnexionSource(s,ecoute,envoie,mode);
     if(x==0){
         stopNwait(s,ecoute,envoie);
     }
     printf("%d \n", x);
-
+*/
     return 0;
 }
 
