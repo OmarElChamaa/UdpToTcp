@@ -4,17 +4,12 @@
 #include <stdarg.h>
 #include <stdio.h>
 #include <unistd.h>
-
-
 #include <sys/wait.h>
 #include <sys/stat.h>
-
 #include <fcntl.h>
 #include <dirent.h>
-
 #include <sys/types.h>
 #include <sys/socket.h>
-
 #include <errno.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
@@ -31,6 +26,8 @@ char ID=0;
 double messagesEnvoyes = 0 ; //hors etablissement  
 double messagesPerdus = 0 ; //hors etablissement 
 
+
+
 /**
  * @brief genere un int aleatoire entre 0 et max 
  * 
@@ -43,7 +40,14 @@ int generateRandInt(int max){
     return r;
 } 
 
-
+/**
+ * @brief Fonction servant a ecrire les donnees respective pour les tracer 
+ * 
+ * @param gnuplot 
+ * @param envoie 
+ * @param perdu 
+ * @param temps 
+ */
 void dessinerFigure(FILE *gnuplot,double envoie, double perdu,double temps){
     fprintf(gnuplot, "plot '-' \n");
     fprintf(gnuplot,"%f %lf\n", temps, envoie);
@@ -54,7 +58,11 @@ void dessinerFigure(FILE *gnuplot,double envoie, double perdu,double temps){
     
 }
 
-
+/**
+ * @brief Pour setup la legende de la figure stop n wait 
+ * 
+ * @param gnuplot 
+ */
 void setupPlotStop(FILE *gnuplot){
     fprintf(gnuplot, "set terminal png size 600,600\nset output'figStopNwait.png'\n");
     fprintf(gnuplot, "set xlabel \"temps en s\"\nset ylabel \"nbr messages\"\n");
@@ -92,6 +100,14 @@ struct packet  init_packet(){
     memset(p.data,'\0',42);
     return p;
 }
+
+typedef struct noeud {
+    int num; 
+    struct packet p;
+    struct noeud* suivant;
+}noeud;
+
+
 
 /**
  * @brief Renvoie la cause de l'erreur + exit a 1 
@@ -132,6 +148,52 @@ int creationSocket (int desc){
     }
 return desc;
 }
+
+
+
+void push(struct noeud** courant, struct packet p)
+{
+    struct noeud* nouveau_noeud = (struct noeud*) malloc(sizeof(struct noeud));
+    nouveau_noeud->p  = p;
+    nouveau_noeud->suivant = (*courant);
+    (*courant)    = nouveau_noeud;
+}
+
+
+void deleteNode(struct noeud** courant, int key)
+{
+    struct noeud *temp = *courant, *prev;
+
+    if (temp != NULL && temp->num == key) {
+        *courant = temp->suivant; // Changed head
+        free(temp); // free old head
+        return;
+    }
+ 
+
+    while (temp != NULL && temp->num != key) {
+        prev = temp;
+        temp = temp->suivant;
+    }
+
+    if (temp == NULL)
+        return;
+ 
+    prev->suivant = temp->suivant;
+ 
+    free(temp); 
+}
+
+void printList(struct noeud* node)
+{
+    while (node != NULL) {
+        printf(" %d ", node->num);
+        node = node->suivant;
+    }
+}
+
+
+
 
 
 
@@ -211,10 +273,6 @@ struct sockaddr_in envoie)
  * @param envoie 
  * @return int 
  */
-
-
-//Conseil : gérer sigint dans votre source pour fermer la connexion proprement
-//!!!!!!!!!!!!
 int fermeture_connection_source(int s,struct sockaddr_in ecoute,
 struct sockaddr_in envoie)
 {
@@ -485,7 +543,6 @@ struct sockaddr_in envoie){
     p.seq=altern ;
     p.id=ID ; 
     p.type+=4;
-    p.fenetre=42;
 
     fd_set fd_monitor;
     struct timeval tv;
@@ -590,7 +647,7 @@ struct sockaddr_in envoie){
 
                     clock_t end = clock();
                     double time_spent = (double)(end - begin) / CLOCKS_PER_SEC;
-                    //dessinerFigure(gnuplot,messagesEnvoyes,messagesPerdus,time_spent);
+                    dessinerFigure(gnuplot,messagesEnvoyes,messagesPerdus,time_spent);
 
                     fseek(fp, TAILLEFEN, SEEK_CUR);
                     printf("donnees lu sont %s \n",p.data);
@@ -716,12 +773,12 @@ int stopNwaitServer (int s,struct sockaddr_in ecoute,
  
 int go_back_N_serevr (int s,struct sockaddr_in ecoute,
     struct sockaddr_in envoie){
-int resultat =0;
 
-int numAck=0,retour=0;
-int fenetre_reception[N];
-int nb_places_libres = N;
-int position =0;
+    int resultat =0;
+    int numAck=0,retour=0;
+    
+    int nb_places_libres = N;
+    int position =0;
 
 
     struct packet p=init_packet();
@@ -772,6 +829,17 @@ return resultat;
 
 
 
+struct noeud* parcoursListe(struct noeud* node, int n)
+{
+    for(int i = 0 ; i<n;i++){
+        if(node->suivant!=NULL){
+            node=node->suivant;
+        }
+    }
+    return node;
+}
+
+
 
 /**
  * @brief Fonction implementant la procedure go-back-N,cote source 
@@ -781,92 +849,205 @@ return resultat;
  * @param envoie 
  * @return int 
  */
- 
 int go_back_N_source (int s,struct sockaddr_in ecoute,
     struct sockaddr_in envoie){
-int resultat =0;
- 
 
-int numAck=0,retour=0;
-packet fenetre_emission[N];
-int nb_places_libres = N;
-int position =0;
-int messagesPerdusALaSuite =0;
-int dernierPerdu=-5;
-packet *fenetre_congestion= malloc(sizeof(packet)*1);//peut-etre il faut l'initialiser ==> a voir
-//int taille_fenetre_congestion = 1;
-packet tmp= init_packet();
+     
+    int taille_fenetre_congestion = 52 ;
+    int position = 0 ;
 
+    int nb_places_libres = 1 ;
+    int taille_emission = 0 ;
 
-fd_set fd_monitor;
-struct timeval tv;
-int retval;
+    int DernierSeqEnv = 0 ;
+    int DernierAcqRecu = 0 ;
+    int MPerdusSuite = 0 ;
+    
 
-FD_ZERO(&fd_monitor);
-FD_SET(s, &fd_monitor);
+    
+    struct noeud* node = (struct noeud*) malloc(sizeof(struct noeud)) ; 
+    struct noeud* tete = node;
 
-tv.tv_sec = 4;
-tv.tv_usec = 0;
+    fd_set fd_monitor;
+    struct timeval tv;
+    int retval;
+    
 
-int x=0;
-socklen_t size=sizeof(ecoute);
+    FD_ZERO(&fd_monitor);
+    FD_SET(s, &fd_monitor);
 
-while(1){
-    for(int i=0;i<N;i++){
-        if(nb_places_libres>0){
-            tmp=fenetre_emission[position];
-            tmp.seq=(short)position;//cast à voir
-            x = sendto(s,&tmp,DEFAULTSIZE+1,0,(struct sockaddr*)&envoie,sizeof(envoie)); 
-            if(x==-1){
-                if(close(s)==-1){
-                    raler("close");
-                }   
-            raler("Sendto");
-            }   
-        messagesEnvoyes ++ ; 
-        (nb_places_libres-=1)%N;
-        (position+=1)%N;
+    tv.tv_sec = 4;
+    tv.tv_usec = 0;
+
+    int x=0;
+    socklen_t size=sizeof(ecoute);
+
+    FILE *fp=fopen("test.txt","r");
+
+    if(fp==NULL){
+        if(close(s)==-1){
+            raler("close");
         }
-        else{
-            retval=select(FD_SETSIZE+1,&fd_monitor,NULL,NULL,&tv);
-            //test retval 
-            //--
-            if(FD_ISSET(s,&fd_monitor)){  
-                x=recvfrom(s,&tmp,DEFAULTSIZE,0,
-                (struct sockaddr*)&ecoute,&size);
+        raler("fopen");
+    }/*
+    while(!feof(fp)){
+        struct packet p = init_packet();
+        node->num=taille_emission;
+        taille_emission++;
+        fgets(p.data,42,fp );
+        push(&node,p);
+        printf("%s \n",p.data);
+    }
+    fclose(fp);
+    */
 
-                if(tmp.type==2){
-                    printf("jai recu type = 2 ");
-                    //gnuplot
-                    //..
-                    return fermeture_connection_source(s,ecoute,envoie);
-                }
-                else{//un acq est recu ==> je libere autant de places
-                nb_places_libres=nb_places_libres+(int)tmp.acq;//cast à voir
-                //application des regles d'augmentation de debit
-                //..
-                continue;//j'ai des places libres donc je continue 
+    
+   
+    
+
+    while(1){
+         fgets(p.data,p.fenetre, fp );
+        if( feof(fp) ) {
+            fclose(fp); 
+        }
+
+            fseek(fp,p.fenetre, SEEK_CUR);
+            printf("donnees lu sont %s \n",p.data);
+            p.seq = position ; 
+            p.id = ID;
+            p.type = 4;
+            node=tete;
+
+        for(int i = 0 ; i<taille_fenetre_congestion/52;i++){
+            if(nb_places_libres>0){
+                nb_places_libres--;
+                node; 
+                x = sendto(s,&node.p,DEFAULTSIZE+1,0,(struct sockaddr*)&envoie,sizeof(envoie)); 
+                    if(x==-1){
+                        if(close(s)==-1){
+                            raler("close");
+                        }   
+                    raler("Sendto");
+                } 
+                DernierSeqEnv = p.seq ;
+                messagesEnvoyes ++ ;
+                if(node->suivant!=NULL){
+                    node=node->suivant; 
+                }    
+            }else{
+               
                 }
             }
-            else{//seq perdu
-            if (dernierPerdu==position-1){//deuxieme perdu a la suite 
-                messagesPerdusALaSuite++;//incrementation des messages perdus a la suite
+            node = tete ;
+        retval=select(FD_SETSIZE+1,&fd_monitor,NULL,NULL,&tv);
+
+        if(FD_ISSET(s,&fd_monitor)){  
+            x=recvfrom(s,&p,DEFAULTSIZE,0,
+            (struct sockaddr*)&ecoute,&size);
+
+            if(p.type==2){
+                printf("jai recu type = 2 ");
+                //gnuplot
+                //..
+                return fermeture_connection_source(s,ecoute,envoie);
+            }
+               // taille_fenetre_congestion = taille_fenetre_congestion * 0,1;
+            if(p.ecn >0 ){
+                int pourcent=(taille_fenetre_congestion*52 )*0.1;
+                
+                if (pourcent>52){
+                int x= pourcent/52;
+                taille_fenetre_congestion-=x;
+                }
+                //int reste = (taille_fenetre_congestion * 42) % 42 ;
+                    parcoursListe(node,taille_fenetre_congestion);
+                    node.p.fenetre=42-pourcent;
+                    node = tete;
+                }
             }
             else{
-                messagesPerdusALaSuite=-5;//sinon on revient à la valeur initiale des messages perdus à la suite
-            }
-            dernierPerdu=position;//le num de sequence du dernier message perdu
-            
-                if (messagesPerdusALaSuite ==3){
-                    //application des regles de diminuation de debit
+                //Dest a bien tout recu incrementation fen congestion 
+                if(p.acq == DernierSeqEnv ){
+                    taille_fenetre_congestion++;
+                    nb_places_libres = nb_places_libres + (p.acq-DernierAcqRecu);
+                    DernierAcqRecu = p.acq;
                 }
-            continue;
+                else{
+                    if(p.acq == DernierAcqRecu){
+                        MPerdusSuite ++ ;
+                        if(MPerdusSuite == 3){
+                            taille_fenetre_congestion = 1 ;
+                            MPerdusSuite = 0 ;
+                        }
+                    }
+                    else{
+                        MPerdusSuite=0;
+                    }
+                }
+                continue;//j'ai des places libres donc je continue 
+            }
+        }else{
+            if(taille_fenetre_congestion>52){
+                taille_fenetre_congestion = taille_fenetre_congestion / 2 ;
             }
         }
+
+    return 0;
     }
-continue;
-}
 
 
-return resultat;
-}
+/*
+for(int i=0;i<taille_fenetre_congestion;i++){
+            if(nb_places_libres>0){
+                tmp=fenetre_emission[position];
+                tmp.seq=(short)position;//cast à voir
+                x = sendto(s,&tmp,DEFAULTSIZE+1,0,(struct sockaddr*)&envoie,sizeof(envoie)); 
+                if(x==-1){
+                    if(close(s)==-1){
+                        raler("close");
+                    }   
+                raler("Sendto");
+                }   
+            messagesEnvoyes ++ ; 
+            (nb_places_libres-=1)%N;
+            (position+=1)%N;
+            }
+            else{
+                retval=select(FD_SETSIZE+1,&fd_monitor,NULL,NULL,&tv);
+                //test retval 
+                //--
+                if(FD_ISSET(s,&fd_monitor)){  
+                    x=recvfrom(s,&tmp,DEFAULTSIZE,0,
+                    (struct sockaddr*)&ecoute,&size);
+
+                    if(tmp.type==2){
+                        printf("jai recu type = 2 ");
+                        //gnuplot
+                        //..
+                        return fermeture_connection_source(s,ecoute,envoie);
+                    }
+                    else{//un acq est recu ==> je libere autant de places
+                    nb_places_libres=nb_places_libres+(int)tmp.acq;//cast à voir
+                    //application des regles d'augmentation de debit
+                    //..
+                    continue;//j'ai des places libres donc je continue 
+                    }
+                }
+                else{//seq perdu
+                if (dernierPerdu==position-1){//deuxieme perdu a la suite 
+                    messagesPerdusALaSuite++;//incrementation des messages perdus a la suite
+                }
+                else{
+                    messagesPerdusALaSuite=-5;//sinon on revient à la valeur initiale des messages perdus à la suite
+                }
+                dernierPerdu=position;//le num de sequence du dernier message perdu
+                
+                    if (messagesPerdusALaSuite ==3){
+                        //application des regles de diminuation de debit
+                    }
+                continue;
+                }
+            }
+        }
+        continue;
+    }*/
