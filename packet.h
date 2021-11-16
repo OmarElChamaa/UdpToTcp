@@ -986,15 +986,12 @@ int go_back_N_source (int s,struct sockaddr_in ecoute,
                 }
                 continue;//j'ai des places libres donc je continue 
             }
-        }else{
-            if(taille_fenetre_congestion>52){
-                taille_fenetre_congestion = taille_fenetre_congestion / 2 ;
-            }
+        
         }
 
+    
     return 0;
-    }
-
+}
 
 /*
 for(int i=0;i<taille_fenetre_congestion;i++){
@@ -1050,4 +1047,6 @@ for(int i=0;i<taille_fenetre_congestion;i++){
             }
         }
         continue;
-    }*/
+    }
+
+    */
