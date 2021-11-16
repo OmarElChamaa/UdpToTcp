@@ -9,7 +9,7 @@ int main (){
     int s=0;
     struct sockaddr_in ecoute;
     struct sockaddr_in envoie;
-    char mode ='0'; ///ca va etre intialiser a argv[1]
+    char mode ='1'; ///ca va etre intialiser a argv[1]
 
     s = socket(AF_INET, SOCK_DGRAM, 0);
 
@@ -24,13 +24,15 @@ int main (){
     envoie.sin_port = htons(4444); 
     inet_pton(AF_INET,"127.0.0.1",&(envoie.sin_addr));
     
-
-    int x =etablissementConnexionSource(s,ecoute,envoie,mode);
-    if(x==0){
-        stopNwait(s,ecoute,envoie);
-    }
+    
+    //int x =etablissementConnexionSource(s,ecoute,envoie,mode);
+    int x = 0 ;
     printf("%d \n", x);
-
+    
+    if(x==0){
+       // stopNwait(s,ecoute,envoie);
+       go_back_N_source(s,ecoute,envoie);
+    }
     return 0;
 }
 

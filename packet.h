@@ -96,7 +96,7 @@ struct packet  init_packet(){
     p.seq =0 ;
     p.ecn = 0 ;
     p.acq=0;
-    p.fenetre=42;
+    p.fenetre=52;
     memset(p.data,'\0',42);
     return p;
 }
@@ -160,28 +160,11 @@ void push(struct noeud** courant, struct packet p)
 }
 
 
-void deleteNode(struct noeud** courant, int key)
+void deleteNode(struct noeud** courant)
 {
-    struct noeud *temp = *courant, *prev;
-
-    if (temp != NULL && temp->num == key) {
-        *courant = temp->suivant; // Changed head
-        free(temp); // free old head
-        return;
-    }
- 
-
-    while (temp != NULL && temp->num != key) {
-        prev = temp;
-        temp = temp->suivant;
-    }
-
-    if (temp == NULL)
-        return;
- 
-    prev->suivant = temp->suivant;
- 
-    free(temp); 
+    if(courant!=NULL){
+        free(courant);
+    } 
 }
 
 void printList(struct noeud* node)
@@ -775,10 +758,7 @@ int go_back_N_serevr (int s,struct sockaddr_in ecoute,
     struct sockaddr_in envoie){
 
     int resultat =0;
-    int numAck=0,retour=0;
-    
-    int nb_places_libres = N;
-    int position =0;
+    int dernierSeqRecu = -1 ;
 
 
     struct packet p=init_packet();
@@ -813,30 +793,40 @@ int go_back_N_serevr (int s,struct sockaddr_in ecoute,
                 printf("Jai recu mon message de fin \n");
                 return fermeture_connection_serveur(s,ecoute,envoie);
             }
+            //accepter en ordre
+            if( (dernierSeqRecu + 1) != p.seq){
+                p=init_packet();
+                p.acq=p.seq;
+                int x = sendto(s,&p,DEFAULTSIZE+1,0,(struct sockaddr*)&envoie,sizeof(envoie)); 
+                    if(x==-1){
+                        if(close(s)==-1){
+                            raler("close");
+                        }   
+                    raler("Sendto");
+                }
+               continue;
+            }
+
+            
             //Test si le paquet est un nouveau paquet
             //si oui, une place de plus est occupée avec le numéro de séquence de ce paquet et traite les données
             
             //Sinon je renvoie le dernier acq
             }
-            
-
-        
     }
 
-return resultat;
+    return resultat;
 }
 
 
 
-
-struct noeud* parcoursListe(struct noeud* node, int n)
+void parcoursListe(struct noeud* node, int n)
 {
     for(int i = 0 ; i<n;i++){
         if(node->suivant!=NULL){
             node=node->suivant;
         }
     }
-    return node;
 }
 
 
@@ -853,7 +843,7 @@ int go_back_N_source (int s,struct sockaddr_in ecoute,
     struct sockaddr_in envoie){
 
      
-    int taille_fenetre_congestion = 52 ;
+    int taille_fenetre_congestion =3 ;
     int position = 0 ;
 
     int nb_places_libres = 1 ;
@@ -867,6 +857,8 @@ int go_back_N_source (int s,struct sockaddr_in ecoute,
     
     struct noeud* node = (struct noeud*) malloc(sizeof(struct noeud)) ; 
     struct noeud* tete = node;
+    struct packet p = init_packet();
+    node->p = p ;
 
     fd_set fd_monitor;
     struct timeval tv;
@@ -889,40 +881,32 @@ int go_back_N_source (int s,struct sockaddr_in ecoute,
             raler("close");
         }
         raler("fopen");
-    }/*
-    while(!feof(fp)){
-        struct packet p = init_packet();
-        node->num=taille_emission;
-        taille_emission++;
-        fgets(p.data,42,fp );
-        push(&node,p);
-        printf("%s \n",p.data);
     }
-    fclose(fp);
-    */
-
-    
-   
-    
-
     while(1){
-         fgets(p.data,p.fenetre, fp );
-        if( feof(fp) ) {
-            fclose(fp); 
-        }
+            
 
-            fseek(fp,p.fenetre, SEEK_CUR);
-            printf("donnees lu sont %s \n",p.data);
-            p.seq = position ; 
-            p.id = ID;
-            p.type = 4;
-            node=tete;
-
-        for(int i = 0 ; i<taille_fenetre_congestion/52;i++){
+        for(int i = 0 ; i<taille_fenetre_congestion;i++){
             if(nb_places_libres>0){
+                position ++ ;
+                fgets(node->p.data,node->p.fenetre, fp );
+                if( feof(fp) ) {
+                    fclose(fp); 
+                }
+
+                fseek(fp,node->p.fenetre, SEEK_CUR);
+                printf("donnees lu sont %s \n",node->p.data);
+                node->p.seq = position ; 
+                node->p.id = ID;
+                node->p.type = 4;
+                if(node->suivant!=NULL){
+                    node=node->suivant; 
+                }else{
+                    struct noeud* newNode =
+                    (struct noeud*) malloc(sizeof(struct noeud)) ; 
+                    push(&newNode,p);
+                } 
                 nb_places_libres--;
-                node; 
-                x = sendto(s,&node.p,DEFAULTSIZE+1,0,(struct sockaddr*)&envoie,sizeof(envoie)); 
+                x = sendto(s,&node->p,DEFAULTSIZE+1,0,(struct sockaddr*)&envoie,sizeof(envoie)); 
                     if(x==-1){
                         if(close(s)==-1){
                             raler("close");
@@ -930,15 +914,11 @@ int go_back_N_source (int s,struct sockaddr_in ecoute,
                     raler("Sendto");
                 } 
                 DernierSeqEnv = p.seq ;
-                messagesEnvoyes ++ ;
-                if(node->suivant!=NULL){
-                    node=node->suivant; 
-                }    
-            }else{
-               
-                }
+                messagesEnvoyes ++ ; 
             }
-            node = tete ;
+            // A voir si select doit venir ici
+        }
+        node = tete ;
         retval=select(FD_SETSIZE+1,&fd_monitor,NULL,NULL,&tv);
 
         if(FD_ISSET(s,&fd_monitor)){  
@@ -956,97 +936,54 @@ int go_back_N_source (int s,struct sockaddr_in ecoute,
                 int pourcent=(taille_fenetre_congestion*52 )*0.1;
                 
                 if (pourcent>52){
-                int x= pourcent/52;
-                taille_fenetre_congestion-=x;
+                    int quotient= pourcent/52;
+                    taille_fenetre_congestion-=quotient;//Sinon il faut peut-etre supprimer les noeuds
+                //boucle de delete de n noeuds
                 }
-                //int reste = (taille_fenetre_congestion * 42) % 42 ;
-                    parcoursListe(node,taille_fenetre_congestion);
-                    node.p.fenetre=42-pourcent;
+                    int reste = (taille_fenetre_congestion * 52) % 52 ;
+                    
+                    if(reste>=42){
+                        parcoursListe(node,taille_fenetre_congestion);
+                        deleteNode(&node);//A revoir
+                        taille_fenetre_congestion--; 
+                    }
+                    else{ 
+                        parcoursListe(node,taille_fenetre_congestion);
+                        node->p.fenetre=52-reste;
+                    }
                     node = tete;
                 }
-            }
-            else{
-                //Dest a bien tout recu incrementation fen congestion 
-                if(p.acq == DernierSeqEnv ){
-                    taille_fenetre_congestion++;
-                    nb_places_libres = nb_places_libres + (p.acq-DernierAcqRecu);
-                    DernierAcqRecu = p.acq;
-                }
                 else{
-                    if(p.acq == DernierAcqRecu){
-                        MPerdusSuite ++ ;
-                        if(MPerdusSuite == 3){
-                            taille_fenetre_congestion = 1 ;
-                            MPerdusSuite = 0 ;
-                        }
+                    //Dest a bien tout recu incrementation fen congestion 
+                    if(p.acq == DernierSeqEnv ){
+                        taille_fenetre_congestion++;
+                        nb_places_libres = nb_places_libres + (p.acq-DernierAcqRecu);
+                        DernierAcqRecu = p.acq;
+                        parcoursListe(node,(p.acq-DernierAcqRecu));
+                        tete=node;
                     }
                     else{
-                        MPerdusSuite=0;
+                        if(p.acq == DernierAcqRecu){
+                            MPerdusSuite ++ ;
+                            if(MPerdusSuite == 3){
+                                taille_fenetre_congestion = 1 ;
+                                MPerdusSuite = 0 ;
+                            }
+                        }
+                        else{
+                            MPerdusSuite=0;
+                        }
                     }
+                    continue;//j'ai des places libres donc je continue 
+                }   
+                continue;
+            }    
+            else{
+                if(taille_fenetre_congestion>52){
+                    taille_fenetre_congestion = taille_fenetre_congestion / 2 ;
                 }
-                continue;//j'ai des places libres donc je continue 
             }
-        
+            continue;   
         }
-
-    
     return 0;
 }
-
-/*
-for(int i=0;i<taille_fenetre_congestion;i++){
-            if(nb_places_libres>0){
-                tmp=fenetre_emission[position];
-                tmp.seq=(short)position;//cast à voir
-                x = sendto(s,&tmp,DEFAULTSIZE+1,0,(struct sockaddr*)&envoie,sizeof(envoie)); 
-                if(x==-1){
-                    if(close(s)==-1){
-                        raler("close");
-                    }   
-                raler("Sendto");
-                }   
-            messagesEnvoyes ++ ; 
-            (nb_places_libres-=1)%N;
-            (position+=1)%N;
-            }
-            else{
-                retval=select(FD_SETSIZE+1,&fd_monitor,NULL,NULL,&tv);
-                //test retval 
-                //--
-                if(FD_ISSET(s,&fd_monitor)){  
-                    x=recvfrom(s,&tmp,DEFAULTSIZE,0,
-                    (struct sockaddr*)&ecoute,&size);
-
-                    if(tmp.type==2){
-                        printf("jai recu type = 2 ");
-                        //gnuplot
-                        //..
-                        return fermeture_connection_source(s,ecoute,envoie);
-                    }
-                    else{//un acq est recu ==> je libere autant de places
-                    nb_places_libres=nb_places_libres+(int)tmp.acq;//cast à voir
-                    //application des regles d'augmentation de debit
-                    //..
-                    continue;//j'ai des places libres donc je continue 
-                    }
-                }
-                else{//seq perdu
-                if (dernierPerdu==position-1){//deuxieme perdu a la suite 
-                    messagesPerdusALaSuite++;//incrementation des messages perdus a la suite
-                }
-                else{
-                    messagesPerdusALaSuite=-5;//sinon on revient à la valeur initiale des messages perdus à la suite
-                }
-                dernierPerdu=position;//le num de sequence du dernier message perdu
-                
-                    if (messagesPerdusALaSuite ==3){
-                        //application des regles de diminuation de debit
-                    }
-                continue;
-                }
-            }
-        }
-        continue;
-    }
-
-    */
