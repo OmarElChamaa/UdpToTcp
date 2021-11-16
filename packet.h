@@ -758,10 +758,7 @@ int go_back_N_serevr (int s,struct sockaddr_in ecoute,
     struct sockaddr_in envoie){
 
     int resultat =0;
-    int numAck=0,retour=0;
-    
-    int nb_places_libres = N;
-    int position =0;
+    int dernierSeqRecu = -1 ;
 
 
     struct packet p=init_packet();
@@ -796,17 +793,29 @@ int go_back_N_serevr (int s,struct sockaddr_in ecoute,
                 printf("Jai recu mon message de fin \n");
                 return fermeture_connection_serveur(s,ecoute,envoie);
             }
+            //accepter en ordre
+            if( (dernierSeqRecu + 1) != p.seq){
+                p=init_packet();
+                p.acq=p.seq;
+                int x = sendto(s,&p,DEFAULTSIZE+1,0,(struct sockaddr*)&envoie,sizeof(envoie)); 
+                    if(x==-1){
+                        if(close(s)==-1){
+                            raler("close");
+                        }   
+                    raler("Sendto");
+                }
+               continue;
+            }
+
+            
             //Test si le paquet est un nouveau paquet
             //si oui, une place de plus est occupée avec le numéro de séquence de ce paquet et traite les données
             
             //Sinon je renvoie le dernier acq
             }
-            
-
-        
     }
 
-return resultat;
+    return resultat;
 }
 
 
@@ -878,6 +887,7 @@ int go_back_N_source (int s,struct sockaddr_in ecoute,
 
         for(int i = 0 ; i<taille_fenetre_congestion;i++){
             if(nb_places_libres>0){
+                position ++ ;
                 fgets(node->p.data,node->p.fenetre, fp );
                 if( feof(fp) ) {
                     fclose(fp); 
