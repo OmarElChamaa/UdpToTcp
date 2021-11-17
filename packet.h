@@ -759,7 +759,8 @@ int go_back_N_serevr (int s,struct sockaddr_in ecoute,
 
     int resultat =0;
     int dernierSeqRecu = -1 ;
-
+    int taille_fenetre_recep =N;
+    int taille_fen_congest=1;
 
     struct packet p=init_packet();
 
@@ -772,48 +773,54 @@ int go_back_N_serevr (int s,struct sockaddr_in ecoute,
     socklen_t size=sizeof(ecoute);
 
     while(1){
-        tv.tv_sec = 4;
-        tv.tv_usec = 0;
-        retval = select(FD_SETSIZE+1, &fd_monitor, NULL, NULL, &tv);
-        if(retval==-1){
-            if(close(s)==-1){
-                raler("close");
-            }            
-            raler("select Go-Back-N server\n");
-        }
-
-        if(FD_ISSET(s,&fd_monitor)){
-            printf("data ready\n");//Je receve et je test et si tout va bien je renvois avec les nouvelles valeurs
-
-            if((retour=recvfrom(s,&p,DEFAULTSIZE+1,0,(struct sockaddr*)&ecoute,&size))==-1){
-                raler("recvfrom");
+        for(int i = 0; i<taille_fen_congest; i++ ){
+            tv.tv_sec = 4;
+            tv.tv_usec = 0;
+            //ecoute
+            retval = select(FD_SETSIZE+1, &fd_monitor, NULL, NULL, &tv);
+            if(retval==-1){
+                if(close(s)==-1){
+                    raler("close");
+                }            
+                raler("select Go-Back-N server\n");
             }
-            // fermeture connection avec FIN 
-            if(p.type==2){
-                printf("Jai recu mon message de fin \n");
-                return fermeture_connection_serveur(s,ecoute,envoie);
-            }
-            //accepter en ordre
-            if( (dernierSeqRecu + 1) != p.seq){
-                p=init_packet();
-                p.acq=p.seq;
-                int x = sendto(s,&p,DEFAULTSIZE+1,0,(struct sockaddr*)&envoie,sizeof(envoie)); 
-                    if(x==-1){
-                        if(close(s)==-1){
-                            raler("close");
-                        }   
-                    raler("Sendto");
+
+            if(FD_ISSET(s,&fd_monitor)){//qqch à recevoir?
+                printf("data ready\n");//Je receve et je test et si tout va bien je renvois avec les nouvelles valeurs
+
+                if((recvfrom(s,&p,DEFAULTSIZE+1,0,(struct sockaddr*)&ecoute,&size))==-1){
+                    raler("recvfrom");
                 }
-               continue;
-            }
+                // fermeture connection avec FIN 
+                if(p.type==2){
+                    printf("Jai recu mon message de fin \n");
+                    return fermeture_connection_serveur(s,ecoute,envoie);
+                }
+                //accepter dans l'ordre ordre
+                if( (dernierSeqRecu + 1) == p.seq){
+                    dernierSeqRecu=p.seq;
+                    printf("Paquet %d accepté \n données : %s\n",p.seq,p.data);
+                }
+                    continue;
+                }
 
-            
-            //Test si le paquet est un nouveau paquet
-            //si oui, une place de plus est occupée avec le numéro de séquence de ce paquet et traite les données
-            
-            //Sinon je renvoie le dernier acq
+            else{//timeout - rien sur la socket j'envoie l'acq
+                p=init_packet();
+                    p.acq=dernierSeqRecu;
+                    int x = sendto(s,&p,DEFAULTSIZE+1,0,(struct sockaddr*)&envoie,sizeof(envoie)); 
+                        if(x==-1){
+                            if(close(s)==-1){
+                                raler("close");
+                            }   
+                        raler("Sendto");
+                }
             }
+            
+        }
+        continue;
     }
+
+
 
     return resultat;
 }
