@@ -913,6 +913,7 @@ int go_back_N_source (int s,struct sockaddr_in ecoute,
                     push(&newNode,p);
                 } 
                 nb_places_libres--;
+                //packet k = init_packet();
                 x = sendto(s,&node->p,DEFAULTSIZE+1,0,(struct sockaddr*)&envoie,sizeof(envoie)); 
                     if(x==-1){
                         if(close(s)==-1){

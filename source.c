@@ -25,9 +25,9 @@ int main (){
     inet_pton(AF_INET,"127.0.0.1",&(envoie.sin_addr));
     
     
-    //int x =etablissementConnexionSource(s,ecoute,envoie,mode);
-    int x = 0 ;
-    printf("%d \n", x);
+    int x =etablissementConnexionSource(s,ecoute,envoie,mode);
+    //int x = 0 ;
+    //printf("%d \n", x);
     
     if(x==0){
        // stopNwait(s,ecoute,envoie);
