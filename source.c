@@ -9,7 +9,7 @@ int main (){
     int s=0;
     struct sockaddr_in ecoute;
     struct sockaddr_in envoie;
-    char mode ='1'; ///ca va etre intialiser a argv[1]
+    char mode ='0'; ///ca va etre intialiser a argv[1]
 
     s = socket(AF_INET, SOCK_DGRAM, 0);
 
@@ -30,8 +30,8 @@ int main (){
     //printf("%d \n", x);
     
     if(x==0){
-       // stopNwait(s,ecoute,envoie);
-       go_back_N_source(s,ecoute,envoie);
+       stopNwait(s,ecoute,envoie);
+       //go_back_N_source(s,ecoute,envoie);
     }
     return 0;
 }
