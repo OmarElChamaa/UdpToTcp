@@ -1,13 +1,20 @@
+vpath %.h 
+
 CC = gcc -g
 CFLAGS = -W -Wall -Wextra -Werror
-SOURCES = $(wildcard *.c)
-OBJETS = $(SOURCES:.c=.o)
-EXEC = main
-TEMPS = $(wildcard *.time)
 
-$(EXEC) : $(OBJETS)
-	$(CC) $(CFLAGS) -o $@ $^ 
-%.o : %.c
-	$(CC) $(CFLAGS) -c $<
+exe: source destination
+source: source.o 
+
+destination : server.o
+
+
+source.o:source.c packet.h
+	$(CC) $(CFLAGS) -c source.c
+server.o:server.c packet.h
+	$(CC) $(CFLAGS) -c server.c
 clean:
-	rm $(OBJETS) $(EXEC) $(TEMPS)
+	rm *.o source destination
+	@echo Clean!
+plot :
+	gnuplot StopWaitFig.p

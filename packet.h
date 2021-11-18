@@ -850,7 +850,6 @@ int go_back_N_source (int s,struct sockaddr_in ecoute,
     int position = 0 ;
 
     int nb_places_libres = 1 ;
-    int taille_emission = 0 ;
 
     int DernierSeqEnv = 0 ;
     int DernierAcqRecu = 0 ;
@@ -865,8 +864,6 @@ int go_back_N_source (int s,struct sockaddr_in ecoute,
 
     fd_set fd_monitor;
     struct timeval tv;
-    int retval;
-    
 
     FD_ZERO(&fd_monitor);
     FD_SET(s, &fd_monitor);
@@ -903,11 +900,11 @@ int go_back_N_source (int s,struct sockaddr_in ecoute,
                 nb_places_libres--;
                 x = sendto(s,node->p,DEFAULTSIZE+1,0,(struct sockaddr*)&envoie,sizeof(envoie)); 
                 printf("on envoie notre premer packet : %s \n",node->p->data);
-                    if(x==-1){
-                        if(close(s)==-1){
-                            raler("close");
-                        }   
-                    raler("Sendto");
+                if(x==-1){
+                    if(close(s)==-1){
+                        raler("close");
+                    }   
+                raler("Sendto");
                 } 
                 if(node->suivant!=NULL){
                     node=node->suivant; 
@@ -924,7 +921,13 @@ int go_back_N_source (int s,struct sockaddr_in ecoute,
             // A voir si select doit venir ici
         }
         node = tete ;
-        retval=select(FD_SETSIZE+1,&fd_monitor,NULL,NULL,&tv);
+        int retval=select(FD_SETSIZE+1,&fd_monitor,NULL,NULL,&tv);
+        if(retval==-1){
+            if(close(s)==-1){
+                raler("close");
+            }   
+            raler("Sendto");
+        }
 
         if(FD_ISSET(s,&fd_monitor)){  
             x=recvfrom(s,&p,DEFAULTSIZE,0,
