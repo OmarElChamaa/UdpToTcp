@@ -3,18 +3,14 @@ vpath %.h
 CC = gcc -g
 CFLAGS = -W -Wall -Wextra -Werror
 
-exe: source destination
-source: source.o 
+all: source server
 
-destination : server.o
-
-
-source.o:source.c packet.h
-	$(CC) $(CFLAGS) -c source.c
-server.o:server.c packet.h
-	$(CC) $(CFLAGS) -c server.c
+source:source.c packet.h
+	$(CC) $(CFLAGS) -o $@ $^ -lm
+server:server.c packet.h
+	$(CC) $(CFLAGS) -o $@ $^ 
 clean:
-	rm *.o source destination
+	rm *.o source server
 	@echo Clean!
 plot :
 	gnuplot StopWaitFig.p
