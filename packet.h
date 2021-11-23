@@ -644,10 +644,6 @@ struct sockaddr_in envoie){
                     dessinerFigure(gnuplot,messagesEnvoyes,messagesPerdus,time_spent);
                     continue ; 
                 }
-
-                //else if
-                //si je recoi syn + acq 
-                //je renvoie acq
                 
             }
             
@@ -759,7 +755,7 @@ int go_back_N_serevr (int s,struct sockaddr_in ecoute,
     struct sockaddr_in envoie){
 
     int resultat =0;
-    int dernierSeqRecu = -1 ;
+    int dernierSeqRecu = 0 ;
 
 
     struct packet p=init_packet();
@@ -783,7 +779,7 @@ int go_back_N_serevr (int s,struct sockaddr_in ecoute,
             raler("select Go-Back-N server\n");
         }
 
-        if(FD_ISSET(s,&fd_monitor)){
+        while(FD_ISSET(s,&fd_monitor)){
             printf("data ready\n");//Je receve et je test et si tout va bien je renvois avec les nouvelles valeurs
 
             if((retval=recvfrom(s,&p,DEFAULTSIZE+1,0,(struct sockaddr*)&ecoute,&size))==-1){
@@ -798,7 +794,7 @@ int go_back_N_serevr (int s,struct sockaddr_in ecoute,
             //accepter en ordre
             if( (dernierSeqRecu + 1) != p.seq){
                 
-                p.acq=p.seq;
+                p.acq=dernierSeqRecu;
                 printf("Jenvoie acq de %d \n",p.acq);
                 int x = sendto(s,&p,DEFAULTSIZE+1,0,(struct sockaddr*)&envoie,sizeof(envoie)); 
                     if(x==-1){
@@ -809,12 +805,11 @@ int go_back_N_serevr (int s,struct sockaddr_in ecoute,
                 }
                continue;
             }
-
-            
-            //Test si le paquet est un nouveau paquet
-            //si oui, une place de plus est occupée avec le numéro de séquence de ce paquet et traite les données
-            
-            //Sinon je renvoie le dernier acq
+            else{
+                dernierSeqRecu=p.seq;
+                p.acq=dernierSeqRecu;
+                sendto(s,&p,DEFAULTSIZE+1,0,(struct sockaddr*)&envoie,sizeof(envoie)); 
+            }
             }
     }
 
@@ -846,13 +841,13 @@ int go_back_N_source (int s,struct sockaddr_in ecoute,
     struct sockaddr_in envoie){
 
      
-    int taille_fenetre_congestion =3 ;
+    int taille_fenetre_congestion =1 ;
     int position = 0 ;
 
     int nb_places_libres = 1 ;
 
-    int DernierSeqEnv = 0 ;
-    int DernierAcqRecu = 0 ;
+    int DernierSeqEnv = -1 ;
+    int DernierAcqRecu = -1 ;
     int MPerdusSuite = 0 ;
     
 
@@ -919,6 +914,8 @@ int go_back_N_source (int s,struct sockaddr_in ecoute,
                 messagesEnvoyes ++ ; 
             }
             // A voir si select doit venir ici
+            
+        
         }
         node = tete ;
         int retval=select(FD_SETSIZE+1,&fd_monitor,NULL,NULL,&tv);
@@ -972,9 +969,10 @@ int go_back_N_source (int s,struct sockaddr_in ecoute,
                         DernierAcqRecu = p.acq;
                         parcoursListe(node,(p.acq-DernierAcqRecu));
                         tete=node;
-                        printf("nb placxes libres = %d \n",nb_places_libres);
+                        printf("nb places libres = %d \n",nb_places_libres);
                     }
-                    else{
+                    else{//Il faut tester si p.acq==dernierAcqRecu ==> Perte 
+                        // Sinon il ne s'agit pas d'une perte mais d'un acq normal
                         printf("Message perdu \n");
                         if(p.acq == DernierAcqRecu){
                             MPerdusSuite ++ ;
@@ -984,7 +982,7 @@ int go_back_N_source (int s,struct sockaddr_in ecoute,
                             }
                         }
                         else{
-                            MPerdusSuite=0;
+                            MPerdusSuite=1;
                         }
                     }
                     continue;//j'ai des places libres donc je continue 
@@ -998,5 +996,6 @@ int go_back_N_source (int s,struct sockaddr_in ecoute,
             }
             continue;   
         }
+        fclose(fp); 
     return 0;
 }
