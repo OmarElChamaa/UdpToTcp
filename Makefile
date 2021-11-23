@@ -10,7 +10,7 @@ source:source.c packet.h
 server:server.c packet.h
 	$(CC) $(CFLAGS) -o $@ $^ 
 clean:
-	rm *.o source server
+	rm source server
 	@echo Clean!
 plot :
 	gnuplot StopWaitFig.p

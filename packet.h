@@ -416,7 +416,7 @@ struct sockaddr_in envoie,char mode){
 int etablissementConnexionServer (int s,struct sockaddr_in ecoute,
 struct sockaddr_in envoie){
    
-    int b = generateRandInt(100);
+    unsigned short b = generateRandInt(100);
     int retour=0;
 
     fd_set fd_monitor;

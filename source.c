@@ -5,16 +5,16 @@
 
 int main(int argc, char * argv[]){
 
-    if(argc!=4){
+    if(argc!=5){
         raler("Mauvais nombre d'arguments \n");
     }
     char *mode=argv[1];
-    char *portLocal=argv[2];
-    char *portEnvoie=argv[3];
+    char *ipDistante=argv[2];
+    char *portLocal=argv[3];
+    char *portEnvoie=argv[4];
 
-    int portLocalInt=atoi(portLocal);//3333
-    int portEcouteInt=atoi(portEnvoie); //4444
-    
+    unsigned short portLocalInt=atoi(portLocal);//3333
+    unsigned short portEcouteInt=atoi(portEnvoie); //4444
 
     int s=0;
     struct sockaddr_in ecoute;
@@ -31,7 +31,7 @@ int main(int argc, char * argv[]){
     memset(&envoie,0,sizeof(envoie));
     envoie.sin_family = AF_INET; 
     envoie.sin_port = htons(portEcouteInt); 
-    inet_pton(AF_INET,"127.0.0.1",&(envoie.sin_addr));
+    inet_pton(AF_INET,ipDistante,&(envoie.sin_addr));
     
     
     if(strcmp(mode,"0")==0){

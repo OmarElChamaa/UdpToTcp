@@ -1,6 +1,5 @@
-    #include "packet.h"
-
-
+#include "packet.h"
+#include <unistd.h>
 
 int main (int argc, char * argv[]){
 
@@ -11,8 +10,8 @@ int main (int argc, char * argv[]){
     char *portLocal=argv[2];
     char *portEnvoie=argv[3];
 
-    int portLocalInt=atoi(portLocal);//6666
-    int portEcouteInt=atoi(portEnvoie); //5555
+    unsigned short portLocalInt=atoi(portLocal);//6666
+    unsigned short portEcouteInt=atoi(portEnvoie); //5555
 
     int s=0;
     struct sockaddr_in ecoute;
