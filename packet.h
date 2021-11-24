@@ -860,10 +860,10 @@ int go_back_N_source (int s,struct sockaddr_in ecoute,
     struct sockaddr_in envoie){
 
      
-    int taille_fenetre_congestion =3 ;
+    int taille_fenetre_congestion =1 ;
     int position = 0 ;
 
-    int nb_places_libres = 3 ;
+    int nb_places_libres = 1 ;
 
     int DernierSeqEnv = 0;
     int DernierAcqRecu = -1 ;
@@ -904,10 +904,10 @@ int go_back_N_source (int s,struct sockaddr_in ecoute,
                     node->p->type = 2;
                     return fermeture_connection_source(s,ecoute,envoie);
                 }
-        for(int i = 0 ; i<taille_fenetre_congestion;i++){
+       // for(int i = 0 ; i<taille_fenetre_congestion;i++){
                 //struct packet p=init_packet();
 
-            if(nb_places_libres>0){
+            while(nb_places_libres>0){
                 position ++ ;
                 fgets(node->p->data,node->p->fenetre-10, fp );
                 fseek(fp,node->p->fenetre, SEEK_CUR);
@@ -916,7 +916,7 @@ int go_back_N_source (int s,struct sockaddr_in ecoute,
                 node->p->seq = DernierSeqEnv ; 
                 node->p->id = ID++;
                 node->p->type=0;
-                //node->p->type = 4;
+                node->num++;
                 if( feof(fp) ) {
                     fclose(fp); 
                     node->p->type = 2;
@@ -943,8 +943,7 @@ int go_back_N_source (int s,struct sockaddr_in ecoute,
                 //DernierSeqEnv = node->p->seq ;
                 messagesEnvoyes ++ ; 
             }
-        }
-        tete=node ;
+            tete=node ;
         int retval=select(FD_SETSIZE+1,&fd_monitor,NULL,NULL,&tv);
         if(retval==-1){
             if(close(s)==-1){
@@ -972,8 +971,8 @@ int go_back_N_source (int s,struct sockaddr_in ecoute,
                         nb_places_libres = nb_places_libres + (p.acq-DernierAcqRecu);
                         //nb_places_libres ++ ;
                         DernierAcqRecu = p.acq;
-                        parcoursListe(node,(p.acq-DernierAcqRecu));
-                        tete=node;
+                        //parcoursListe(node,(p.acq-DernierAcqRecu));
+                        //tete=node;
                         printf("nb places libres = %d \n",nb_places_libres);
                     
                     }
@@ -989,16 +988,17 @@ int go_back_N_source (int s,struct sockaddr_in ecoute,
                 if (pourcent>52){
                     int quotient= pourcent/52;
                     taille_fenetre_congestion-=quotient;//Sinon il faut peut-etre supprimer les noeuds
+                
                 //boucle de delete de n noeuds
                 }
                     int reste = (taille_fenetre_congestion * 52) % 52 ;
                     
-                    while(reste>=42){
+                    if(reste>=42){
                         parcoursListe(node,taille_fenetre_congestion);
                         deleteNode(&node);//A revoir
                         taille_fenetre_congestion--; 
                         reste-=42;
-                        node=tete;
+                        //node=tete;
                     }
                     if(reste>0){ 
                         parcoursListe(node,taille_fenetre_congestion);
@@ -1032,6 +1032,8 @@ int go_back_N_source (int s,struct sockaddr_in ecoute,
         }
          continue;   
         }
+        //}
+        
         }
         fclose(fp); 
     return 0;
