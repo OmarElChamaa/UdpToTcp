@@ -176,6 +176,17 @@ void printList(struct noeud* node)
 }
 
 
+struct noeud* chercheList(struct noeud* node,int n)
+{
+    while (node != NULL) {
+        if(node->num==n){
+            return node;
+        }
+        node = node->suivant;
+    }
+    printf("Pas dans la liste \n ");
+    return node ;  
+}
 
 
 
@@ -779,7 +790,7 @@ int go_back_N_serevr (int s,struct sockaddr_in ecoute,
             raler("select Go-Back-N server\n");
         }
 
-        while(FD_ISSET(s,&fd_monitor)){
+        if(FD_ISSET(s,&fd_monitor)){
             printf("data ready\n");//Je receve et je test et si tout va bien je renvois avec les nouvelles valeurs
 
             if((retval=recvfrom(s,&p,DEFAULTSIZE+1,0,(struct sockaddr*)&ecoute,&size))==-1){
@@ -792,27 +803,26 @@ int go_back_N_serevr (int s,struct sockaddr_in ecoute,
                 return fermeture_connection_serveur(s,ecoute,envoie);
             }
             //accepter en ordre
-            if( (dernierSeqRecu + 1) != p.seq){
-                
-                p.acq=dernierSeqRecu;
-                printf("Jenvoie acq de %d \n",p.acq);
-                int x = sendto(s,&p,DEFAULTSIZE+1,0,(struct sockaddr*)&envoie,sizeof(envoie)); 
+            if( (dernierSeqRecu + 1) == p.seq){
+                 dernierSeqRecu=p.seq;
+                printf("ISSSAAAM SEQ = %d et dernierSEQRecu =%d et ACQ =%d\n",p.seq,dernierSeqRecu,dernierSeqRecu);
+                continue;
+            }
+        continue;
+        }
+    else{
+        p=init_packet();
+        p.acq=dernierSeqRecu;
+        printf("Jenvoie acq de %d \n",p.acq);
+        int x = sendto(s,&p,DEFAULTSIZE+1,0,(struct sockaddr*)&envoie,sizeof(envoie)); 
                     if(x==-1){
                         if(close(s)==-1){
                             raler("close");
                         }   
                     raler("Sendto");
-                }
-               continue;
-            }
-            else{
-                dernierSeqRecu=p.seq;
-                p.acq=dernierSeqRecu;
-                sendto(s,&p,DEFAULTSIZE+1,0,(struct sockaddr*)&envoie,sizeof(envoie)); 
-            }
-            }
+                }    
+        }
     }
-
     return resultat;
 }
 
@@ -846,14 +856,15 @@ int go_back_N_source (int s,struct sockaddr_in ecoute,
 
     int nb_places_libres = 1 ;
 
-    int DernierSeqEnv = -1 ;
-    int DernierAcqRecu = -1 ;
+    //int DernierSeqEnv = -1 ;
+    int DernierAcqRecu = 0 ;
     int MPerdusSuite = 0 ;
     
 
     
     struct noeud* node = (struct noeud*) malloc(sizeof(struct noeud)) ; 
     struct noeud* tete = node;
+    struct noeud* teteZero = node;
     struct packet p = init_packet();
     node->p = &p ;
 
@@ -894,7 +905,7 @@ int go_back_N_source (int s,struct sockaddr_in ecoute,
                 }
                 nb_places_libres--;
                 x = sendto(s,node->p,DEFAULTSIZE+1,0,(struct sockaddr*)&envoie,sizeof(envoie)); 
-                printf("on envoie notre premer packet : %s \n",node->p->data);
+                printf("on envoie un packet : %s \n",node->p->data);
                 if(x==-1){
                     if(close(s)==-1){
                         raler("close");
@@ -904,20 +915,16 @@ int go_back_N_source (int s,struct sockaddr_in ecoute,
                 if(node->suivant!=NULL){
                     node=node->suivant; 
                 }else{
-                    struct noeud* newNode =
+                    struct noeud *newNode =
                     (struct noeud*) malloc(sizeof(struct noeud)) ; 
                     push(&newNode,p);
+                    //node->suivant=(*newNode);
                 }
-                DernierSeqEnv = node->p->seq ;
-                
-                
+                //DernierSeqEnv = node->p->seq ;
                 messagesEnvoyes ++ ; 
             }
-            // A voir si select doit venir ici
-            
-        
         }
-        node = tete ;
+        tete=node ;
         int retval=select(FD_SETSIZE+1,&fd_monitor,NULL,NULL,&tv);
         if(retval==-1){
             if(close(s)==-1){
@@ -961,33 +968,35 @@ int go_back_N_source (int s,struct sockaddr_in ecoute,
                     node = tete;
                 }
                 else{
-                    //Dest a bien tout recu incrementation fen congestion 
-                    if(p.acq == DernierSeqEnv ){
-                        
+                    if(p.acq == DernierAcqRecu){
+                        printf("Message perdu \n");
+                        MPerdusSuite ++ ;
+                        if(MPerdusSuite == 3){
+                            taille_fenetre_congestion = 1 ;
+                            MPerdusSuite = 0 ;
+                             continue;
+                        }
+                        else{//Il faut tester si p.acq==dernierAcqRecu ==> Perte 
+                            // Sinon il ne s'agit pas d'une perte mais d'un acq normal
+                            MPerdusSuite=1;
+                            node = chercheList(teteZero,DernierAcqRecu-1);
+                             continue;
+                        }
+                    }
+                   // if(p.acq == DernierSeqEnv ){
+                      else{  
                         taille_fenetre_congestion++;
                         nb_places_libres = nb_places_libres + (p.acq-DernierAcqRecu);
+                        //nb_places_libres ++ ;
                         DernierAcqRecu = p.acq;
                         parcoursListe(node,(p.acq-DernierAcqRecu));
                         tete=node;
                         printf("nb places libres = %d \n",nb_places_libres);
                     }
-                    else{//Il faut tester si p.acq==dernierAcqRecu ==> Perte 
-                        // Sinon il ne s'agit pas d'une perte mais d'un acq normal
-                        printf("Message perdu \n");
-                        if(p.acq == DernierAcqRecu){
-                            MPerdusSuite ++ ;
-                            if(MPerdusSuite == 3){
-                                taille_fenetre_congestion = 1 ;
-                                MPerdusSuite = 0 ;
-                            }
-                        }
-                        else{
-                            MPerdusSuite=1;
-                        }
-                    }
-                    continue;//j'ai des places libres donc je continue 
+                    
+                    //continue;//j'ai des places libres donc je continue 
                 }   
-                continue;
+                //continue;
             }    
             else{
                 if(taille_fenetre_congestion>52){
