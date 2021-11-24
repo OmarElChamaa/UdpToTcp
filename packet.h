@@ -860,12 +860,12 @@ int go_back_N_source (int s,struct sockaddr_in ecoute,
     struct sockaddr_in envoie){
 
      
-    int taille_fenetre_congestion =1 ;
+    int taille_fenetre_congestion =3 ;
     int position = 0 ;
 
-    int nb_places_libres = 1 ;
+    int nb_places_libres = 3 ;
 
-    int DernierSeqEnv = -1 ;
+    int DernierSeqEnv = 0;
     int DernierAcqRecu = -1 ;
     int MPerdusSuite = 0 ;
     
@@ -909,7 +909,7 @@ int go_back_N_source (int s,struct sockaddr_in ecoute,
 
             if(nb_places_libres>0){
                 position ++ ;
-                fgets(node->p->data,node->p->fenetre, fp );
+                fgets(node->p->data,node->p->fenetre-10, fp );
                 fseek(fp,node->p->fenetre, SEEK_CUR);
                 //printf("donnees lu sont %s \n",node->p->data);
                 DernierSeqEnv++;
@@ -923,8 +923,8 @@ int go_back_N_source (int s,struct sockaddr_in ecoute,
                     return fermeture_connection_source(s,ecoute,envoie);
                 }
                 x = sendto(s,node->p,DEFAULTSIZE+1,0,(struct sockaddr*)&envoie,sizeof(envoie)); 
-                //printf("on envoie un packet : %s \n",node->p->data);
-                printf("%s \n",node->p->data);
+                printf("on envoie un packet : %s \nSon SEQ = %d\n",node->p->data,node->p->seq);
+               // printf("%s \n",node->p->data);
                 if(x==-1){
                     if(close(s)==-1){
                         raler("close");
