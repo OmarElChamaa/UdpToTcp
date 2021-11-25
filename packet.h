@@ -189,6 +189,15 @@ struct noeud* chercheList(struct noeud* node,int n)
 }
 
 
+void freeList(struct noeud* node){
+    struct noeud* tmp = node ; 
+    while (node!=NULL){
+       tmp = node->suivant;
+       free(node);
+       node = tmp;
+    }
+}
+
 
 
 /**
@@ -903,6 +912,9 @@ int go_back_N_source (int s,struct sockaddr_in ecoute,
         if( feof(fp) ) {
             fclose(fp); 
             node->p->type = 2;
+            freeList(node);
+            freeList(tete);
+            freeList(teteZero);
             return fermeture_connection_source(s,ecoute,envoie);
         }
 
@@ -958,6 +970,9 @@ int go_back_N_source (int s,struct sockaddr_in ecoute,
                 printf("jai recu type = 2 ");
                 //gnuplot
                 //..
+                freeList(node);
+                freeList(tete);
+                freeList(teteZero);
                 return fermeture_connection_source(s,ecoute,envoie);
             }
             
@@ -1018,11 +1033,14 @@ int go_back_N_source (int s,struct sockaddr_in ecoute,
             printf("\nboucle vide\n\n");
             compteur++;
             if (compteur ==10){
+                freeList(node);
+                freeList(tete);
+                freeList(teteZero);
+                fclose(fp); 
                 return fermeture_connection_source(s,ecoute,envoie);
             }
            //continue;   
         }
     }
-    fclose(fp); 
     return 0;
 }
