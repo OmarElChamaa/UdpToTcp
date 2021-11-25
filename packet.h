@@ -240,7 +240,7 @@ struct sockaddr_in envoie)
                 }
                 if(p.type == 16){
                     printf("ACQ bien recu \n");
-                    printf("\tConnexion fermée\n");
+                    printf("---\t Connexion fermée\t--- \n");
                     if(close(s)==-1){
                         raler("close");
                     }
@@ -316,7 +316,7 @@ struct sockaddr_in envoie)
                 if(sen==-1){
                     raler("send etablisemment \n ");
                 }
-                printf("\tConnexion fermée \n");
+                printf("---\t Connexion fermée\t--- \n");
                 if(close(s)==-1){
                     raler("close");
                 }  
@@ -404,7 +404,7 @@ struct sockaddr_in envoie,char mode){
                     printf("mauvais comportement du serveur en 3 way-shakehand\n");
                     exit(EXIT_FAILURE);
                 }
-                printf("connexion établie!\n");
+                printf("---\t Connexion établie \t---\n");
                 ID=0;              
                 return 0 ;
         }else{
@@ -484,16 +484,16 @@ struct sockaddr_in envoie){
             if(p.acq==b+1){
                 //test de mode 
                 if(p.data[0]=='0'){//stopAndWait
-                    printf("connexion établie - \t - mode Stop And Wait :)\n");
+                    printf("Mode Stop And Wait \n ---\t Connexion établie \t---\n");
                     return 0;
                 }
                 else{//GoBackN
                     if(p.data[0]=='1'){
-                        printf("connexion établie - \t - mode Go-Back-N :)\n");
+                    printf("Mode GO-Back-N \n ---\t Connexion établie \t---\n");
                         return 2;
                     }
                     else{
-                        printf("Mode iconnue - Merci de de passer 0 ou 1 en parametre :(\n");
+                        printf("Mode iconnue - Merci de de passer 0 ou 1 en parametre :)\n");
                         return 1;
                     }
                 }
@@ -564,8 +564,6 @@ struct sockaddr_in envoie){
     }
 
     fseek(fp, TAILLEFEN, SEEK_CUR);
-    printf("donnees lu sont %s \n",p.data);
-
     int x=0;
     socklen_t size=sizeof(ecoute);
 
@@ -624,7 +622,7 @@ struct sockaddr_in envoie){
                 if(p.acq==(altern+1)%2 ){
                     messagesEnvoyes ++ ; 
                     altern =(altern+1)%2;
-                    printf("Jai recu in je modif altern %d \n ",altern);
+                    printf("%d \n ",altern);
                     p.seq=altern ;
                     ID++;
                     p.id=ID ;
@@ -646,7 +644,6 @@ struct sockaddr_in envoie){
                     dessinerFigure(gnuplot,messagesEnvoyes,messagesPerdus,time_spent);
 
                     fseek(fp, TAILLEFEN, SEEK_CUR);
-                    printf("donnees lu sont %s \n",p.data);
                     continue;
                 }else{ // message perdu ou acq non recu 
                     messagesPerdus ++ ; 
@@ -707,12 +704,9 @@ int stopNwaitServer (int s,struct sockaddr_in ecoute,
             raler("select stop and wait server\n");
         }
         if(FD_ISSET(s,&fd_monitor)){
-            printf("data ready\n");//Je receve et je test et si tout va bien je renvois avec les nouvelles valeurs
-
             if((retour=recvfrom(s,&p,DEFAULTSIZE+1,0,(struct sockaddr*)&ecoute,&size))==-1){
                 raler("recvfrom");
             } 
-
                 // fermeture connection avec FIN 
             if(p.type==2){
                 printf("Jai recu mon message de fin \n");
@@ -724,12 +718,9 @@ int stopNwaitServer (int s,struct sockaddr_in ecoute,
             //Afficher le msg reçu :
             if(p.seq==numAck){
                 //recuperer les données recues:
-                printf("ETAPE1 : J'ai recu un paquet son seq est à %d\n",p.seq);
-                printf("%d \n",p.seq);
                 fprintf(fp,"%s",p.data);
-                printf("Données reçues : %s\n",p.data);
-                printf("je recoit un nouveau paquet avec mon ACK à :%d \n",numAck);
                 p.acq=numAck;
+                printf("\nMsg = %s\nSEQ = %d\tAQC de ce msg = %d\n",p.data,numAck,p.acq);
                 numAck=(numAck+1)%2;
 
             }
@@ -744,7 +735,7 @@ int stopNwaitServer (int s,struct sockaddr_in ecoute,
                 raler("sender \n");
             }
 
-            printf("Etape 2: J'ai envoyé l'ack %d \n",p.acq);
+            //printf("Etape 2: J'ai envoyé l'ack %d \n",p.acq);
             continue;
         }
         printf("Rien n'est recu\nNouvlelle tentative en cours../..\n");
@@ -780,6 +771,12 @@ int go_back_N_serevr (int s,struct sockaddr_in ecoute,
     FD_SET(s, &fd_monitor);
     socklen_t size=sizeof(ecoute);
 
+    FILE *fp = fopen("testColle.txt", "w");
+    if (fp == NULL)
+    {
+        raler("Fopen server");
+    }
+
     while(1){
         tv.tv_sec = 4;
         tv.tv_usec = 0;
@@ -793,7 +790,7 @@ int go_back_N_serevr (int s,struct sockaddr_in ecoute,
         }
 
         if(FD_ISSET(s,&fd_monitor)){
-                    struct packet p=init_packet();
+            struct packet p=init_packet();
 
             //printf("data ready\n");//Je receve et je test et si tout va bien je renvois avec les nouvelles valeurs
 
@@ -802,27 +799,31 @@ int go_back_N_serevr (int s,struct sockaddr_in ecoute,
             }
             //printf("jai recu mon message seq : %d donnees : %s\n",p.seq,p.data);
             printf(" %s\n",p.data);
+            fprintf(fp,"%s",p.data);
             // fermeture connection avec FIN 
             if(p.type==2){
                 printf("Jai recu mon message de fin \n");
+                fclose(fp);
                 return fermeture_connection_serveur(s,ecoute,envoie);
             }
 
 
             //accepter en ordre
             if( (dernierSeqRecu + 1) == p.seq){
-                 dernierSeqRecu=p.seq;
-              //  continue;
+                dernierSeqRecu=p.seq;
             }
-
-                        //printf("ISSSAAAM SEQ = %d et dernierSEQRecu =%d et ACQ =%d\n",p.seq,dernierSeqRecu,dernierSeqRecu);
-
-        //continue;
         }
-    
-        p=init_packet();
-        p.acq=dernierSeqRecu;
-        p.type=16;
+        if(p.ecn>0){
+            p=init_packet();
+            p.acq=dernierSeqRecu;
+            p.type=16;
+            p.ecn=1;
+        }else{
+            p=init_packet();
+            p.acq=dernierSeqRecu;
+            p.type=16; 
+        }
+        
         //printf("Jenvoie acq de %d \n",p.acq);
         int x = sendto(s,&p,DEFAULTSIZE+1,0,(struct sockaddr*)&envoie,sizeof(envoie)); 
                     if(x==-1){
@@ -867,7 +868,7 @@ int go_back_N_source (int s,struct sockaddr_in ecoute,
     int nb_places_libres = 1 ;
 
     int DernierSeqEnv = 0;
-    int DernierAcqRecu = -1 ;
+    int DernierAcqRecu = 0 ;
     int MPerdusSuite = 0 ;
     
 
@@ -899,52 +900,49 @@ int go_back_N_source (int s,struct sockaddr_in ecoute,
         raler("fopen");
     }
     while(1){
-    ///struct packet p=init_packet();
-                if( feof(fp) ) {
-                    fclose(fp); 
-                    node->p->type = 2;
-                    return fermeture_connection_source(s,ecoute,envoie);
-                }
-       // for(int i = 0 ; i<taille_fenetre_congestion;i++){
-                //struct packet p=init_packet();
+        if( feof(fp) ) {
+            fclose(fp); 
+            node->p->type = 2;
+            return fermeture_connection_source(s,ecoute,envoie);
+        }
 
-            while(nb_places_libres>0){
-                position ++ ;
-                fgets(node->p->data,node->p->fenetre-10, fp );
-                fseek(fp,node->p->fenetre, SEEK_CUR);
-                //printf("donnees lu sont %s \n",node->p->data);
-                DernierSeqEnv++;
-                node->p->seq = DernierSeqEnv ; 
-                node->p->id = ID++;
-                node->p->type=0;
-                node->num++;
-                if( feof(fp) ) {
-                    fclose(fp); 
-                    node->p->type = 2;
-                    return fermeture_connection_source(s,ecoute,envoie);
-                }
-                x = sendto(s,node->p,DEFAULTSIZE+1,0,(struct sockaddr*)&envoie,sizeof(envoie)); 
-                printf("on envoie un packet : %s \nSon SEQ = %d\n",node->p->data,node->p->seq);
-               // printf("%s \n",node->p->data);
-                if(x==-1){
-                    if(close(s)==-1){
-                        raler("close");
-                    }   
-                raler("Sendto");
-                } 
-                nb_places_libres--;
-                if(node->suivant!=NULL){
-                    node=node->suivant; 
-                }else{
-                    struct noeud *newNode =
-                    (struct noeud*) malloc(sizeof(struct noeud)) ; 
-                    push(&newNode,p);
-                    //node->suivant=(*newNode);
-                }
-                //DernierSeqEnv = node->p->seq ;
-                messagesEnvoyes ++ ; 
+        while(nb_places_libres>0){
+            position ++ ;
+            fgets(node->p->data,node->p->fenetre-10, fp );
+            fseek(fp,node->p->fenetre, SEEK_CUR);
+            //printf("donnees lu sont %s \n",node->p->data);
+            DernierSeqEnv++;
+            node->p->seq = DernierSeqEnv ; 
+            node->p->id = ID++;
+            node->p->type=0;
+            node->num++;
+            if( feof(fp) ) {
+                fclose(fp); 
+                node->p->type = 2;
+                return fermeture_connection_source(s,ecoute,envoie);
             }
-            tete=node ;
+            x = sendto(s,node->p,DEFAULTSIZE+1,0,(struct sockaddr*)&envoie,sizeof(envoie)); 
+           //printf("on envoie un packet : %s \nSon SEQ = %d\n",node->p->data,node->p->seq);
+            // printf("%s \n",node->p->data);
+            if(x==-1){
+                if(close(s)==-1){
+                    raler("close");
+                }   
+                raler("Sendto");
+            } 
+            nb_places_libres--;
+            if(node->suivant!=NULL){
+                node=node->suivant; 
+            }else{
+                struct noeud *newNode =
+                (struct noeud*) malloc(sizeof(struct noeud)) ; 
+                push(&newNode,p);
+              //  node->suivant=newNode;
+            }
+            DernierSeqEnv = node->p->seq ;
+            messagesEnvoyes ++ ; 
+        }
+        tete=node ;
         int retval=select(FD_SETSIZE+1,&fd_monitor,NULL,NULL,&tv);
         if(retval==-1){
             if(close(s)==-1){
@@ -956,48 +954,40 @@ int go_back_N_source (int s,struct sockaddr_in ecoute,
         if(FD_ISSET(s,&fd_monitor)){  
             x=recvfrom(s,&p,DEFAULTSIZE,0,
             (struct sockaddr*)&ecoute,&size);
-            //printf("jai recu un packet du serveur \n");
-            //printf("destination a bien recu acq = %d\n",p.acq);
             if(p.type==2){
                 printf("jai recu type = 2 ");
                 //gnuplot
                 //..
                 return fermeture_connection_source(s,ecoute,envoie);
             }
-               // taille_fenetre_congestion = taille_fenetre_congestion * 0,1;
             
             if((p.acq == DernierSeqEnv)||(p.acq>DernierAcqRecu)){
-                //printf("je suis entré dans le if \n");
                 taille_fenetre_congestion++;
-                        nb_places_libres = nb_places_libres + (p.acq-DernierAcqRecu);
-                        //nb_places_libres ++ ;
-                        DernierAcqRecu = p.acq;
-                        //parcoursListe(node,(p.acq-DernierAcqRecu));
-                        //tete=node;
-                        printf("nb places libres = %d \n",nb_places_libres);
+                printf("nb de place libre  :%d\n",nb_places_libres);
+                nb_places_libres = nb_places_libres + (p.acq-DernierAcqRecu);
+                printf("J'ai changé le nb de place libre  :%d\n",nb_places_libres);
+                DernierAcqRecu = p.acq;
+                printf("nb places libres = %d \n",nb_places_libres);
                     
-                    }
+            }
                 
             else{
-            //printf("je suis entré dans le else \n");
-
-                //continue;
-                //if(p.ecn >0 ){
-                //printf("ecn est active \n");
-                int pourcent=(taille_fenetre_congestion*52 )*0.1;
-                
-                if (pourcent>52){
-                    int quotient= pourcent/52;
-                    taille_fenetre_congestion-=quotient;//Sinon il faut peut-etre supprimer les noeuds
-                
-                //boucle de delete de n noeuds
-                }
-                    int reste = (taille_fenetre_congestion * 52) % 52 ;
+                if(p.ecn >0 ){
+                    printf("ecn est active \n");
+                    int pourcent=(taille_fenetre_congestion*52 )*0.1;
                     
+                    if (pourcent>52){
+                        int quotient= pourcent/52;
+                        taille_fenetre_congestion-=quotient;//Sinon il faut peut-etre supprimer les noeuds
+                        
+                    //boucle de delete de n noeuds
+                    }
+                    int reste = (taille_fenetre_congestion * 52) % 52 ;
                     if(reste>=42){
                         parcoursListe(node,taille_fenetre_congestion);
                         deleteNode(&node);//A revoir
                         taille_fenetre_congestion--; 
+                        nb_places_libres--;
                         reste-=42;
                         //node=tete;
                     }
@@ -1006,36 +996,33 @@ int go_back_N_source (int s,struct sockaddr_in ecoute,
                         node->p->fenetre=52-reste;
                     }
                     node = tete;
-               // }
-                
+                } 
                 printf("Message perdu \n");
                 MPerdusSuite ++ ;
-                    if(MPerdusSuite == 3){
-                        taille_fenetre_congestion = 1 ;
-                        MPerdusSuite = 0 ;
-                      //  continue;
-                    }
-                    else{//Il faut tester si p.acq==dernierAcqRecu ==> Perte 
-                            // Sinon il ne s'agit pas d'une perte mais d'un acq normal
-                        MPerdusSuite=1;
-                        node = chercheList(teteZero,DernierAcqRecu-1);
-                        if(taille_fenetre_congestion>1){
+                if(MPerdusSuite == 3){
+                    taille_fenetre_congestion = 1 ;
+                    MPerdusSuite = 0 ;
+                    //  continue;
+                }
+                else{//Il faut tester si p.acq==dernierAcqRecu ==> Perte 
+                        // Sinon il ne s'agit pas d'une perte mais d'un acq normal
+                    MPerdusSuite=1;
+                    node = chercheList(teteZero,DernierAcqRecu-1);
+                    if(taille_fenetre_congestion>1){
                         taille_fenetre_congestion = taille_fenetre_congestion / 2 ;
                     }
-            }    
-        }
+                }    
+            }
         }
         else{
-        printf("\nboucle vide\n\n");
-        compteur++;
-        if (compteur ==10){
-            return fermeture_connection_source(s,ecoute,envoie);
+            printf("\nboucle vide\n\n");
+            compteur++;
+            if (compteur ==10){
+                return fermeture_connection_source(s,ecoute,envoie);
+            }
+           //continue;   
         }
-         continue;   
-        }
-        //}
-        
-        }
-        fclose(fp); 
+    }
+    fclose(fp); 
     return 0;
 }
