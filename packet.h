@@ -240,6 +240,7 @@ struct sockaddr_in envoie)
                 }
                 if(p.type == 16){
                     printf("ACQ bien recu \n");
+                    printf("\tConnexion fermée\n");
                     if(close(s)==-1){
                         raler("close");
                     }
@@ -315,7 +316,7 @@ struct sockaddr_in envoie)
                 if(sen==-1){
                     raler("send etablisemment \n ");
                 }
-                printf("je ferme ma connexion \n");
+                printf("\tConnexion fermée \n");
                 if(close(s)==-1){
                     raler("close");
                 }  
@@ -333,7 +334,7 @@ struct sockaddr_in envoie)
 
 /**
  * @brief Procede du 3 way handshake du cote source(client) 
- * 0 si bonne fermeture, 1 sinon .envoie le mode au serveur 
+ * 0 si bonne ouverture, 1 sinon .envoie le mode au serveur 
  * 
  * @param s 
  * @param ecoute 
@@ -417,7 +418,7 @@ struct sockaddr_in envoie,char mode){
 
 /**
  * @brief Procede du 3 way handshake du cote destination(server) 
- * 0 si bonne fermeture, 1 sinon 
+ * 0 si bonne ouverture, 1 sinon 
  * 
  * @param s 
  * @param ecoute 
