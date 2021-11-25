@@ -962,9 +962,9 @@ int go_back_N_source (int s,struct sockaddr_in ecoute,
             }
             
             if((p.acq == DernierSeqEnv)||(p.acq>DernierAcqRecu)){
+                nb_places_libres = nb_places_libres + taille_fenetre_congestion;
                 taille_fenetre_congestion++;
                 printf("nb de place libre  :%d\n",nb_places_libres);
-                nb_places_libres = nb_places_libres + (p.acq-DernierAcqRecu);
                 printf("J'ai changé le nb de place libre  :%d\n",nb_places_libres);
                 DernierAcqRecu = p.acq;
                 printf("nb places libres = %d \n",nb_places_libres);
