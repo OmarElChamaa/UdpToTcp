@@ -15,18 +15,169 @@
 #include <arpa/inet.h>
 #include <string.h>
 
+
 #define DEFAULTSIZE 42
 #define ACQ 16
 #define TAILLEFEN 42
 #define N 100
-
 
 char ID=0;
 //variqbles quon utilise pour les Figures au rapport 
 double messagesEnvoyes = 0 ; //hors etablissement  
 double messagesPerdus = 0 ; //hors etablissement 
 
+typedef struct liste {
+    struct packet* p;
+    int NumSeq ;
+    struct liste *suivant;
+    struct liste *precedent;
+}liste;
 
+
+/**
+ * @brief structure du message ou packet 
+ * @struct packet 
+ */
+typedef struct packet
+{
+    char id ; 
+    char type ;
+    short seq  ;
+    short acq  ; 
+    char ecn ;
+    char fenetre  ;
+    char data[42] ;  
+}packet;
+
+
+//////////////////////////////////FCTS sur les listes//////////////////////////
+
+
+liste *liste_vide(void) {
+  return NULL;
+}
+
+void liste_free(liste *const l) {
+  liste *parcours = l;
+  while (parcours) {
+    liste *next = parcours->suivant;
+    
+    if(parcours->p!=NULL){
+        free(parcours->p);
+    }
+    free(parcours);
+    parcours = next;
+  }
+}
+
+liste *liste_debut(const liste *l) {
+  if (!l)
+    return NULL;
+
+  const liste *parcours = l;
+  while (parcours->precedent){
+    parcours = parcours->precedent;
+  }
+  return (liste *) parcours;
+}
+
+
+liste *liste_fin(const liste *const l) {
+  if (!l)
+    return NULL;
+
+  const liste *parcours = l;
+  while (parcours->suivant){
+    parcours = parcours->suivant;
+  }
+  return (liste *) parcours;
+}
+
+liste *liste_insertion_queue(liste *l, struct packet* p) {
+  liste *const nouveau_maillon = malloc(sizeof *nouveau_maillon);
+
+  nouveau_maillon->p = p;
+
+  liste *const fin = liste_fin(l);
+  nouveau_maillon->precedent = fin;
+  nouveau_maillon->suivant = NULL;
+  if (fin)
+    fin->suivant = nouveau_maillon;
+
+  return nouveau_maillon;
+}
+
+
+liste *liste_suppression_tete(liste *l) {
+  if (!l)
+    return NULL;
+
+  liste *const debut = liste_debut(l);
+  liste *const retour = debut->suivant;
+
+  free(debut->p);
+  free(debut);
+  
+  if (retour)
+    retour->precedent = NULL;
+
+  return retour;
+}
+
+
+liste *liste_suppression_queue(liste *l) {
+  if (!l)
+    return NULL;
+
+  liste *const fin = liste_fin(l);
+  liste *const retour = fin->precedent;
+  free (fin->p); 
+  free(fin);
+  if (retour)
+    retour->suivant = NULL;
+
+  return retour;
+}
+
+
+
+
+
+
+
+
+liste *liste_suivant(const liste *l) {
+  return (liste *) (l ? l->suivant : l);
+}
+
+liste *liste_precedent(const liste *l) {
+  return (liste *) (l ? l->precedent : l);
+}
+
+liste *liste_ieme(const liste *l, size_t n) {
+  liste *parcours = liste_debut(l);
+  for (size_t i = 0; parcours && i < n; ++i){
+    parcours = parcours->suivant;
+  }
+  return parcours;
+}
+
+struct packet * liste_element(const liste *l) {
+  return l->p;
+}
+
+int liste_est_vide(const liste *l) {
+  return l ? 0 : 1;
+}
+
+size_t liste_longueur(const liste *l) {
+  size_t longueur = 0;
+  for (const liste *parcours = l; parcours; parcours = parcours->suivant){
+    longueur++;
+  }
+  return longueur;
+}
+//////////////////////////////////////////////////////////////////////////////////////
 
 /**
  * @brief genere un int aleatoire entre 0 et max 
@@ -69,27 +220,14 @@ void setupPlotStop(FILE *gnuplot){
     fprintf(gnuplot, "set title \"message perdu et envoye par rapport au temps\"\n");
 }
 
-/**
- * @brief structure du message ou packet 
- * @struct packet 
- */
-typedef struct packet
-{
-    char id ; 
-    char type ;
-    short seq  ;
-    short acq  ; 
-    char ecn ;
-    char fenetre  ;
-    char data[42] ;  
-}packet;
+
 
 /**
  * @brief initiale les champs du packet 
  * 
  * @return struct packet 
  */
-struct packet  init_packet(){
+struct packet init_packet(){
     struct packet p ; 
     p.id = 0 ;
     p.type = 0 ;
@@ -101,11 +239,6 @@ struct packet  init_packet(){
     return p;
 }
 
-typedef struct noeud {
-    int num; 
-    struct packet* p;
-    struct noeud* suivant;
-}noeud;
 
 
 
@@ -151,55 +284,6 @@ return desc;
 
 
 
-void push(struct noeud** courant, struct packet p)
-{
-    struct noeud* nouveau_noeud = (struct noeud*) malloc(sizeof(struct noeud));
-    nouveau_noeud->p  = &p;
-    nouveau_noeud->suivant = (*courant);
-    (*courant)    = nouveau_noeud;
-}
-
-
-void deleteNode(struct noeud** courant)
-{
-    if(courant!=NULL){
-        free(courant);
-    } 
-}
-
-void printList(struct noeud* node)
-{
-    while (node != NULL) {
-        printf(" %d ", node->num);
-        node = node->suivant;
-    }
-}
-
-
-struct noeud* chercheList(struct noeud* node,int n)
-{
-    while (node != NULL) {
-        if(node->num==n){
-            return node;
-        }
-        node = node->suivant;
-    }
-    printf("Pas dans la liste \n ");
-    return node ;  
-}
-
-
-void freeList(struct noeud* node){
-    struct noeud* tmp = node ; 
-    while (node!=NULL){
-       tmp = node->suivant;
-       free(node);
-       node = tmp;
-    }
-}
-
-
-
 /**
  * @brief Procede du 4 way handshake du cote serveur 
  * 0 si bonne fermeture, 1 sinon
@@ -214,7 +298,6 @@ struct sockaddr_in envoie)
     socklen_t size=sizeof(ecoute);
     struct packet p = init_packet();
     p.type = 16 ; 
-
     fd_set fd_monitor;
     struct timeval tv;
     int retval;
@@ -260,9 +343,6 @@ struct sockaddr_in envoie)
     }
 
 }
-
-
-
 
 
 
@@ -763,7 +843,7 @@ int stopNwaitServer (int s,struct sockaddr_in ecoute,
  * @return int 
  */
  
-int go_back_N_serevr (int s,struct sockaddr_in ecoute,
+int go_back_N_server (int s,struct sockaddr_in ecoute,
     struct sockaddr_in envoie){
 
     int resultat =0;
@@ -848,17 +928,6 @@ int go_back_N_serevr (int s,struct sockaddr_in ecoute,
 
 
 
-void parcoursListe(struct noeud* node, int n)
-{
-    for(int i = 0 ; i<n;i++){
-        if(node->suivant!=NULL){
-            node=node->suivant;
-        }
-    }
-}
-
-
-
 /**
  * @brief Fonction implementant la procedure go-back-N,cote source 
  * 
@@ -881,12 +950,12 @@ int go_back_N_source (int s,struct sockaddr_in ecoute,
     int MPerdusSuite = 0 ;
     
 
-    
-    struct noeud* node = (struct noeud*) malloc(sizeof(struct noeud)) ; 
-    struct noeud* tete = node;
-    struct noeud* teteZero = node;
+    liste *node = liste_vide();
     struct packet p = init_packet();
-    node->p = &p ;
+    
+    node = liste_insertion_queue(node,&p);
+    node->NumSeq = 0 ;
+    
 
     fd_set fd_monitor;
     struct timeval tv;
@@ -912,9 +981,7 @@ int go_back_N_source (int s,struct sockaddr_in ecoute,
         if( feof(fp) ) {
             fclose(fp); 
             node->p->type = 2;
-            freeList(node);
-            freeList(tete);
-            freeList(teteZero);
+            liste_free(liste_debut(node));
             return fermeture_connection_source(s,ecoute,envoie);
         }
 
@@ -927,7 +994,7 @@ int go_back_N_source (int s,struct sockaddr_in ecoute,
             node->p->seq = DernierSeqEnv ; 
             node->p->id = ID++;
             node->p->type=0;
-            node->num++;
+            node->NumSeq++;
             if( feof(fp) ) {
                 fclose(fp); 
                 node->p->type = 2;
@@ -945,16 +1012,14 @@ int go_back_N_source (int s,struct sockaddr_in ecoute,
             nb_places_libres--;
             if(node->suivant!=NULL){
                 node=node->suivant; 
-            }else{
-                struct noeud *newNode =
-                (struct noeud*) malloc(sizeof(struct noeud)) ; 
-                push(&newNode,p);
-              //  node->suivant=newNode;
+            }
+           else{
+                node = liste_insertion_queue(node,&p);
             }
             DernierSeqEnv = node->p->seq ;
             messagesEnvoyes ++ ; 
         }
-        tete=node ;
+        //tete=node ;
         int retval=select(FD_SETSIZE+1,&fd_monitor,NULL,NULL,&tv);
         if(retval==-1){
             if(close(s)==-1){
@@ -970,15 +1035,12 @@ int go_back_N_source (int s,struct sockaddr_in ecoute,
                 printf("jai recu type = 2 ");
                 //gnuplot
                 //..
-                freeList(node);
-                freeList(tete);
-                freeList(teteZero);
+                liste_free(liste_debut(node));
                 return fermeture_connection_source(s,ecoute,envoie);
             }
-            
             if((p.acq == DernierSeqEnv)||(p.acq>DernierAcqRecu)){
-                nb_places_libres = nb_places_libres + taille_fenetre_congestion;
                 taille_fenetre_congestion++;
+                nb_places_libres = nb_places_libres +(taille_fenetre_congestion- (p.acq-DernierAcqRecu));
                 printf("nb de place libre  :%d\n",nb_places_libres);
                 printf("J'ai changé le nb de place libre  :%d\n",nb_places_libres);
                 DernierAcqRecu = p.acq;
@@ -999,18 +1061,18 @@ int go_back_N_source (int s,struct sockaddr_in ecoute,
                     }
                     int reste = (taille_fenetre_congestion * 52) % 52 ;
                     if(reste>=42){
-                        parcoursListe(node,taille_fenetre_congestion);
-                        deleteNode(&node);//A revoir
+                        node = liste_ieme(node,taille_fenetre_congestion);
+                        node = liste_suppression_queue(node);
                         taille_fenetre_congestion--; 
                         nb_places_libres--;
                         reste-=42;
                         //node=tete;
                     }
                     if(reste>0){ 
-                        parcoursListe(node,taille_fenetre_congestion);
+                        node = liste_ieme(node,taille_fenetre_congestion);
                         node->p->fenetre=52-reste;
                     }
-                    node = tete;
+                    //node = tete;
                 } 
                 printf("Message perdu \n");
                 MPerdusSuite ++ ;
@@ -1022,7 +1084,7 @@ int go_back_N_source (int s,struct sockaddr_in ecoute,
                 else{//Il faut tester si p.acq==dernierAcqRecu ==> Perte 
                         // Sinon il ne s'agit pas d'une perte mais d'un acq normal
                     MPerdusSuite=1;
-                    node = chercheList(teteZero,DernierAcqRecu-1);
+                    node = liste_ieme(node,DernierAcqRecu-1);
                     if(taille_fenetre_congestion>1){
                         taille_fenetre_congestion = taille_fenetre_congestion / 2 ;
                     }
@@ -1032,10 +1094,8 @@ int go_back_N_source (int s,struct sockaddr_in ecoute,
         else{
             printf("\nboucle vide\n\n");
             compteur++;
-            if (compteur ==10){
-                freeList(node);
-                freeList(tete);
-                freeList(teteZero);
+            if (compteur ==5){
+                liste_free(liste_debut(node));
                 fclose(fp); 
                 return fermeture_connection_source(s,ecoute,envoie);
             }

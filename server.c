@@ -41,7 +41,7 @@ int main (int argc, char * argv[]){
         stopNwaitServer(s,ecoute,envoie);
     }
      if(x==2){//mode Go back N
-        go_back_N_serevr(s,ecoute,envoie);
+        go_back_N_server(s,ecoute,envoie);
     }
 
     printf("%d \n", x);
