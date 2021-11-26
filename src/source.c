@@ -194,7 +194,7 @@ struct sockaddr_in envoie){
     tv.tv_sec = 5;
     tv.tv_usec = 0;
 
-    FILE *fp=fopen("../test.txt","r");
+    FILE *fp=fopen("../bin/test.txt","r");
 
     if(fp==NULL){
         if(close(s)==-1){
@@ -349,7 +349,7 @@ int go_back_N_source (int s,struct sockaddr_in ecoute,
     int x=0,compteur=0;
     socklen_t size=sizeof(ecoute);
 
-    FILE *fp=fopen("../test.txt","r");
+    FILE *fp=fopen("../bin/test.txt","r");
 
     if(fp==NULL){
         if(close(s)==-1){

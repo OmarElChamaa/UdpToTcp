@@ -191,7 +191,7 @@ int stopNwaitServer (int s,struct sockaddr_in ecoute,
     FD_SET(s, &fd_monitor);
     socklen_t size=sizeof(ecoute);
 
-    FILE *fp = fopen("../testColle.txt", "w");
+    FILE *fp = fopen("../bin/testColle.txt", "w");
     
     if (fp == NULL)
     {
@@ -276,7 +276,7 @@ int go_back_N_server (int s,struct sockaddr_in ecoute,
     FD_SET(s, &fd_monitor);
     socklen_t size=sizeof(ecoute);
 
-    FILE *fp = fopen("../testColle.txt", "w");
+    FILE *fp = fopen("../bin/testColle.txt", "w");
     if (fp == NULL)
     {
         raler("Fopen server");
