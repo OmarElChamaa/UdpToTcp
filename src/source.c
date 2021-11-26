@@ -175,7 +175,10 @@ struct sockaddr_in envoie){
 
     clock_t begin = clock();
 
-    FILE *gnuplot = fopen("../bin/StopWaitFig.p", "w");
+    FILE *gnuplot = fopen("./bin/StopWaitFig.p", "w");
+    if (gnuplot ==NULL){
+        raler("gnuplot open \n");
+    }
     setupPlotStop(gnuplot);
 
     struct packet p=init_packet() ;
@@ -194,7 +197,7 @@ struct sockaddr_in envoie){
     tv.tv_sec = 5;
     tv.tv_usec = 0;
 
-    FILE *fp=fopen("../bin/test.txt","r");
+    FILE *fp=fopen("./bin/test.txt","r");
 
     if(fp==NULL){
         if(close(s)==-1){
@@ -349,13 +352,19 @@ int go_back_N_source (int s,struct sockaddr_in ecoute,
     int x=0,compteur=0;
     socklen_t size=sizeof(ecoute);
 
-    FILE *fp=fopen("../bin/test.txt","r");
+    FILE *fp=fopen("./bin/test.txt","r");
+
+    FILE *gnuplot = fopen("./bin/StopWaitFig.p", "w");
+    if (gnuplot ==NULL){
+        raler("gnuplot open \n");
+    }
+    setupPlotStop(gnuplot);
 
     if(fp==NULL){
         if(close(s)==-1){
             raler("close");
         }
-        raler("fopen");
+        raler("fopen source go back \n");
     }
     while(1){
         if( feof(fp) ) {
@@ -420,7 +429,8 @@ int go_back_N_source (int s,struct sockaddr_in ecoute,
             }
             if((p.acq == DernierSeqEnv)||(p.acq>DernierAcqRecu)){
                 taille_fenetre_congestion++;
-                nb_places_libres = nb_places_libres +(taille_fenetre_congestion- (p.acq-DernierAcqRecu));
+                nb_places_libres = nb_places_libres +(p.acq-DernierAcqRecu);
+                //nb_places_libres = nb_places_libres +(taille_fenetre_congestion- (p.acq-DernierAcqRecu));
                 printf("nb de place libre  :%d\n",nb_places_libres);
                 printf("J'ai changé le nb de place libre  :%d\n",nb_places_libres);
                 DernierAcqRecu = p.acq;

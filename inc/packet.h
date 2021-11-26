@@ -114,10 +114,9 @@ liste *liste_suppression_tete(liste *l) {
 
   liste *const debut = liste_debut(l);
   liste *const retour = debut->suivant;
-
-  free(debut->p);
-  free(debut);
-  
+  if(debut->p!=NULL){
+    free(debut->p);
+  }
   if (retour)
     retour->precedent = NULL;
 
@@ -131,7 +130,9 @@ liste *liste_suppression_queue(liste *l) {
 
   liste *const fin = liste_fin(l);
   liste *const retour = fin->precedent;
-  free (fin->p); 
+  if(fin->p!=NULL){
+        free(fin->p);
+    }
   free(fin);
   if (retour)
     retour->suivant = NULL;
@@ -215,7 +216,7 @@ void dessinerFigure(FILE *gnuplot,double envoie, double perdu,double temps){
  * @param gnuplot 
  */
 void setupPlotStop(FILE *gnuplot){
-    fprintf(gnuplot, "set terminal png size 600,600\nset output'bin/fig.png'\n");
+    fprintf(gnuplot, "set terminal png size 600,600\nset output'../bin/fig.png'\n");
     fprintf(gnuplot, "set xlabel \"temps en s\"\nset ylabel \"nbr messages\"\n");
     fprintf(gnuplot, "set title \"message perdu et envoye par rapport au temps\"\n");
 }
