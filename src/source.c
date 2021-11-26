@@ -1,4 +1,4 @@
-#include "packet.h"
+#include "../inc/packet.h"
 #include <unistd.h>
 
 
@@ -175,7 +175,7 @@ struct sockaddr_in envoie){
 
     clock_t begin = clock();
 
-    FILE *gnuplot = fopen("StopWaitFig.p", "w");
+    FILE *gnuplot = fopen("../bin/StopWaitFig.p", "w");
     setupPlotStop(gnuplot);
 
     struct packet p=init_packet() ;
@@ -194,7 +194,7 @@ struct sockaddr_in envoie){
     tv.tv_sec = 5;
     tv.tv_usec = 0;
 
-    FILE *fp=fopen("test.txt","r");
+    FILE *fp=fopen("../test.txt","r");
 
     if(fp==NULL){
         if(close(s)==-1){
@@ -349,7 +349,7 @@ int go_back_N_source (int s,struct sockaddr_in ecoute,
     int x=0,compteur=0;
     socklen_t size=sizeof(ecoute);
 
-    FILE *fp=fopen("test.txt","r");
+    FILE *fp=fopen("../test.txt","r");
 
     if(fp==NULL){
         if(close(s)==-1){

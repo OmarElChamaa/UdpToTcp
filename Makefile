@@ -5,12 +5,12 @@ CFLAGS = -W -Wall -Wextra -Werror
 
 all: source server
 
-source:source.c packet.h
+source:src/source.c inc/packet.h
 	$(CC) $(CFLAGS) -o $@ $^ -lm
-server:server.c packet.h
+server:src/server.c inc/packet.h
 	$(CC) $(CFLAGS) -o $@ $^ 
 clean:
 	rm source server
 	@echo Clean!
 plot :
-	gnuplot StopWaitFig.p
+	gnuplot bin/StopWaitFig.p

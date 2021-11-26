@@ -215,7 +215,7 @@ void dessinerFigure(FILE *gnuplot,double envoie, double perdu,double temps){
  * @param gnuplot 
  */
 void setupPlotStop(FILE *gnuplot){
-    fprintf(gnuplot, "set terminal png size 600,600\nset output'figStopNwait.png'\n");
+    fprintf(gnuplot, "set terminal png size 600,600\nset output'bin/fig.png'\n");
     fprintf(gnuplot, "set xlabel \"temps en s\"\nset ylabel \"nbr messages\"\n");
     fprintf(gnuplot, "set title \"message perdu et envoye par rapport au temps\"\n");
 }
